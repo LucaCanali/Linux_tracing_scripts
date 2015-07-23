@@ -7,7 +7,8 @@ This includes dynamic tracing scripts with SystemTap both for system calls and f
 
 DIRECTORY                        SHORT DESCRIPTION
 SystemTap_Linux_IO             -> SystemTap scripts for Linux I/O tracing and latency measurements
-SystemTap_Userspace_Oracle     -> SystemTap scripts for Oracle RDBMS troubleshooting and internals investigations using userspace dynamic tracing
+SystemTap_Userspace_Oracle     -> SystemTap scripts for Oracle RDBMS troubleshooting and internals
+                                  investigations using userspace dynamic tracing
 Ftrace                         -> I/O latency histograms with ftrace
 
 Acknowledgements:
@@ -19,3 +20,4 @@ Many of these scripts provided here are experimental, may cause unwanted effect 
 
 More info:
 See the README files in each folder for additional details of what the scripts (are supposed to) do.
+

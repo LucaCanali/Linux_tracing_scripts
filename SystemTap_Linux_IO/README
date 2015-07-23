@@ -3,29 +3,32 @@ SystemTap Linux I/O probes
 Luca.Canali@cern.ch
 
 This directory contains SystemTap scripts of help for troubleshooting and investigating Linux I/O.
+The following probes are for investigating I/O latency and/or tracing at the level of the block I/O interface.  They are variations of the same idea: measuring I/O from kernel.trace("block_rq_issue") to kernel.trace("block_rq_complete").
+This has the added advantage of working *without* kernel debuginfo, as in the original ideas of BrendanGregg's https://github.com/brendangregg/systemtap-lwtools
 
-The following probes are for investigating I/O latency and/or tracing at the level of the block I/O interface.
-They are variations of the same idea: measuring I/O from kernel.trace("block_rq_issue") to kernel.trace("block_rq_complete").
-This has the added advantage of working *without* kernel debuginfo, as in the original ideas of Brendan 
-Gregg's https://github.com/brendangregg/systemtap-lwtools
-
-SCRIPT NAME                                       -> SHORT DESCRIPTION
-blockio_rq_issue_basic_latencyhistogram.stp       -> basic script to measure latency histograms for block I/O  
-blockio_rq_issue_latencyhistogram.stp             -> a more refined script for block I/O histograms
-blockio_rq_issue_latencyhistogram_new.stp         -> same as above with additional optimizations only for SystemTap 2.6 and higher
-blockio_rq_issue_filter_latencyhistogram.stp      -> block I/O histograms with additional configurable filters
-blockio_rq_issue_filter_latencyhistogram_new.stp  -> same as above with additional optimizations only for SystemTap 2.6 and higher
-blockio_latency_outliers_per_device.stp           -> gather stats on block I/O latency per disk and report events with latency 
-                                                     greater then a given threshold
-blockio_rq_all_TRACE_EXPERIMENTAL.stp             -> tracing of block I/O, use for troubleshooting, beware of the overhead
+SCRIPT NAME                                      -> SHORT DESCRIPTION
+blockio_rq_issue_basic_latencyhistogram.stp      -> basic script to measure latency histograms for 
+                                                    block I/O  
+blockio_rq_issue_latencyhistogram.stp            -> a more refined script for block I/O histograms
+blockio_rq_issue_latencyhistogram_new.stp        -> same as above with additional optimizations only 
+                                                    for SystemTap 2.6 and higher
+blockio_rq_issue_filter_latencyhistogram.stp     -> block I/O histograms with additional configurable 
+                                                    filters
+blockio_rq_issue_filter_latencyhistogram_new.stp -> same as above with additional optimizations only 
+                                                    for SystemTap 2.6 and higher
+blockio_latency_outliers_per_device.stp          -> gather stats on block I/O latency per disk and 
+                                                    report events with latency greater then threshold
+blockio_rq_all_TRACE_EXPERIMENTAL.stp            -> tracing of block I/O, use for troubleshooting, 
+                                                    beware of the overhead
 
 The scripts here below produce block I/O histograms using ioblock and ioscheduler providers. 
 They are similar to the scripts above but in this case kernel debuginfo are needed
 
-blockio_ioblock_latencyhistogram.stp              -> latency histograms for block I/O from ioblock provider
-blockio_ioscheduler_latencyhistogram.stp          -> latency histograms for block I/O from ioscheduler  provider
+blockio_ioblock_latencyhistogram.stp             -> latency histograms using the ioblock provider
+blockio_ioscheduler_latencyhistogram.stp         -> latency histograms using the ioscheduler provider
 
 Tracing scripts for block I/O and for sync and async calls (including tracing libaio)
 
-sync_asyncio_and_libiao_TRACE.stp                 -> tracing of I/O calls including asynchronous I/O and libaio.  
+sync_asyncio_and_libiao_TRACE.stp                -> tracing of I/O calls including asynchronous I/O 
+                                                    and libaio.  
 
