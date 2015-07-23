@@ -1,0 +1,46 @@
+#!/usr/local/bin/stap
+#
+# This is an example script for measuring latency of logical I/O (for consistent read)
+# This is just example code, not intended to be complete nor precise
+# Do not run in production as the overhead can be very high
+#
+# Use: stap -v logical_io_latency { note optionally add -x <pid> to trace 1 pid only}
+#
+# needs Linux kernel 3.10 or higher, tested on: OL7.0 and Oracle 12.1.0.2
+#
+# Version 1.0, Nov 2014 by Luca.Canali@cern.ch
+# Additional credits for original contributions: @FritsHoogland
+#
+
+global track_time[10000]
+global latency_logicalio
+
+probe process("oracle").function("kcbgtcr") {  # consistent reads
+   track_time[pid()] = local_clock_us()
+}
+
+probe process("oracle").function("kcbgtcr").return {  # consistent reads
+   latency_logicalio <<< (local_clock_us() - track_time[pid()])
+}
+
+
+probe timer.sec(10) {
+   printf("\n")
+   printf("Sample period: 10 seconds\n")
+   printf("\n")
+   printf("Total logical IOs for consistent read: %10d\n", @count(latency_logicalio))
+   printf("\n")
+   if (@count(latency_logicalio)) {
+      printf("Logical IO latency in microseconds (us):\n")
+      printf("\n")
+      printf("Min:%10d\n", @min(latency_logicalio))
+      printf("Max:%10d\n", @max(latency_logicalio))
+      printf("Avg:%10d\n", @avg(latency_logicalio))
+      printf("\n")
+      printf("Histogram representation of IO latency in microseconds (us):\n")
+      printf("\n")
+      print(@hist_log(latency_logicalio))
+      delete latency_logicalio
+   }
+}
+

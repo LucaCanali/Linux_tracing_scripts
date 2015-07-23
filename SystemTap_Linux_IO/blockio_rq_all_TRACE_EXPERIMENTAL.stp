@@ -1,0 +1,50 @@
+#!/usr/bin/stap
+#
+# blockio_rq_all_TRACE_EXPERIMENTAL.stp
+#
+# Trace all block I/O calls, USE WITH CARE, avoid running this on I/O-busy systems
+#
+# Luca.Canali@cern.ch
+# July 2015
+# Requires SystemTap 2.6 or higher
+# This script requires minor changes for kernel version 3.14 and higher to reflect changes in  struct bio
+#
+# Usage: stap -v blockio_rq_all_TRACE_EXPERIMENTAL.stp
+#
+
+probe kernel.trace("block_rq_issue") {
+   printf("pid=%d, block_rq_issue, rq=%lu...\n",pid(), $rq)
+   for (curr_bio = $rq->bio;  curr_bio; curr_bio = curr_bio->bi_next )
+        if (curr_bio->bi_bdev) {
+            devmaj = curr_bio->bi_bdev->bd_dev >> 20
+            devmin = curr_bio->bi_bdev->bd_dev - (devmaj << 20)
+		    printf("pid=%d,                     ....bio=%lu, bi_size=%d,bi_sector=%d,dev=%d,%d\n", pid(), curr_bio, curr_bio->bi_size, curr_bio->bi_sector, devmaj, devmin )
+        }
+        else
+           printf("pid=%d,                     ....bio=%lu, bi_size=%d,bi_sector=%d,dev=%d\n", pid(), curr_bio, curr_bio->bi_size, curr_bio->bi_sector, 0 )
+}
+
+probe kernel.trace("block_rq_insert") {
+   printf("pid=%d, block_rq_insert, rq=%lu...\n",pid(), $rq)
+   for (curr_bio = $rq->bio;  curr_bio; curr_bio = curr_bio->bi_next )
+        if (curr_bio->bi_bdev) {
+            devmaj = curr_bio->bi_bdev->bd_dev >> 20
+            devmin = curr_bio->bi_bdev->bd_dev - (devmaj << 20)
+		    printf("pid=%d,                     ....bio=%lu, bi_size=%d,bi_sector=%d,dev=%d,%d\n", pid(), curr_bio, curr_bio->bi_size, curr_bio->bi_sector, devmaj, devmin )
+        }
+        else
+           printf("pid=%d,                     ....bio=%lu, bi_size=%d,bi_sector=%d,dev=%d\n", pid(), curr_bio, curr_bio->bi_size, curr_bio->bi_sector, 0 )
+}
+
+probe kernel.trace("block_rq_complete") {
+   printf("pid=%d, block_rq_complete, rq=%lu...\n",pid(), $rq)
+   for (curr_bio = $rq->bio;  curr_bio; curr_bio = curr_bio->bi_next )
+        if (curr_bio->bi_bdev) {
+            devmaj = curr_bio->bi_bdev->bd_dev >> 20
+            devmin = curr_bio->bi_bdev->bd_dev - (devmaj << 20)
+		    printf("pid=%d,                     ....bio=%lu, bi_size=%d,bi_sector=%d,dev=%d,%d\n", pid(), curr_bio, curr_bio->bi_size, curr_bio->bi_sector, devmaj, devmin )
+        }
+        else
+           printf("pid=%d,                     ....bio=%lu, bi_size=%d,bi_sector=%d,dev=%d\n", pid(), curr_bio, curr_bio->bi_size, curr_bio->bi_sector, 0 )
+}
+

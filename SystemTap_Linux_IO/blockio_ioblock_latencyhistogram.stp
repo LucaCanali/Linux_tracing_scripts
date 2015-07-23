@@ -1,0 +1,33 @@
+#!/usr/bin/stap
+#
+# blockio_ioblock_latencyhistogram.stp
+#
+# This is a SystemTap script to gather block I/O latency from the Linux kernel block I/O interface
+# and print I/O latency histograms 
+#
+# By Luca.Canali@cern.ch, March 2015
+#
+# Note this script requires kernel debuginfo
+#
+
+global LatencyTimes, RequestTime
+
+probe ioblock_trace.request {
+  if ($bio)
+      RequestTime[$bio] = gettimeofday_us()
+}
+
+probe ioblock.end {
+  t = gettimeofday_us()
+  s = RequestTime[$bio]
+  delete RequestTime[$bio]
+  if (s > 0)
+     LatencyTimes <<< (t-s)
+}
+
+probe timer.sec(3) {
+   if (@count(LatencyTimes) > 0)
+       println(@hist_log(LatencyTimes))
+   delete(LatencyTimes)
+}
+

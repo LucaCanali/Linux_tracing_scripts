@@ -1,0 +1,53 @@
+#!/usr/local/bin/stap
+#
+# trace_oracle_logical_io_count.stp
+#
+# This is a SystemTap probe to trace and aggregate statistics of Oracle logical I/O 
+# the script works by hooking into the Oracle kernel function kcbgtcr
+# See also the probe trace_oracle_logical_io_basic.stp for more information
+#
+# Dependencies: 
+#    Use systemtap 2.5 or higher
+#    Kernel must have support for uprobes or utrace (this seems the case for example RHEL7.0 and 6.5)
+#    The oracle executable should be in the path: add $ORACLE_HOME/bin in $PATH
+#
+# How to run: stap -v trace_oracle_logical_io_count.stp
+# Note optionally add -x <pid> to limit data collection to 1 process
+#
+# By Luca.Canali@cern.ch, Aug 2014 based on original work by Tanel Poder and Alexander Anokhin
+# Note: This is experimental code, use at your own risk
+#       The overhead of this code can be high, use rather on test systems
+
+global obj_iocount[1000]
+global tbs_iocount[200]
+global pid_iocount[200]
+
+probe process("oracle").function("kcbgtcr") {
+    obj = user_int32(u64_arg(1)+8)
+    tbs = user_int32(u64_arg(1))
+    pid=pid()
+    obj_iocount[obj] += 1 
+    tbs_iocount[tbs] += 1 
+    pid_iocount[pid] += 1 
+}
+
+# print logical io count statistics every 10 seconds and reset the counters
+probe timer.sec(10) {
+    printf("\nDate: %s\n",tz_ctime(gettimeofday_s()))
+    printf("\nObject number and logical I/O count\n")
+    foreach ([obj] in obj_iocount) {
+       printf("obj#=%d, count=%d\n",obj, obj_iocount[obj])
+    }
+    printf("\nTablespace number and logical I/O count\n")
+    foreach ([tbs] in tbs_iocount) {
+       printf("tbs#=%d, count=%d\n", tbs, tbs_iocount[tbs])
+    }
+    printf("\nuser process pid and logical I/O count\n")
+    foreach ([pid] in pid_iocount) {
+       printf("pid#=%d, count=%d\n", pid, pid_iocount[pid])
+    }
+    # comment out here below if you prefer that statistics values grow cumulative 
+    delete obj_iocount
+    delete tbs_iocount
+    delete pid_iocount
+}

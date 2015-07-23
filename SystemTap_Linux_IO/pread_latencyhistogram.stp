@@ -1,0 +1,39 @@
+#!/usr/bin/stap
+#
+# pread_latencyhistogram.stp
+#
+# This is a SystemTap script to gather I/O latency from the Linux kernel syscall pread
+# and print I/O latency histograms
+#
+# By Luca.Canali@cern.ch, March 2015
+#
+# This script is based on original ideas of biolatency-nd.stp of systemtap-lwtools
+# by Brendan Gregg 
+#
+# Note: this probe does not need to have kernel debug info installed
+#
+# Usage: stap -v pread_latencyhistogram.stp <interval>
+#
+# Example: stap -v pread_latencyhistogram.stp 3
+#
+
+global LatencyTimes, RequestTime
+
+probe nd_syscall.pread {
+   RequestTime[tid()] = gettimeofday_us()
+}
+
+probe nd_syscall.pread.return {
+   t = gettimeofday_us()
+   s = RequestTime[tid()]
+   if (s > 0) {
+       LatencyTimes <<< (t-s)
+       delete RequestTime[tid()]
+   }
+}
+
+probe timer.sec($1) {
+   if (@count(LatencyTimes) > 0)
+       println(@hist_log(LatencyTimes))
+   delete(LatencyTimes)	   
+}

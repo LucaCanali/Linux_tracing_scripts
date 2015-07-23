@@ -1,0 +1,75 @@
+#!/usr/local/bin/stap
+#
+# Measure oracle I/O hook on kcbzvb and reporting counts of distinct and repeated I/O
+# The overhead of this code can be high, use rather on test systems
+#
+# Luca.Canali@cern.ch, Nov 2014
+#
+
+/* creates c arrays and zero out the hash table myhashtable */
+%{
+#define NUMBITS   64          /* 64 bits in a long */
+#define ARRAYSIZE 134217728   /* hash table size   */
+#define HASHPRIME 8589934583  /* prime number for hashing, close to ARRAYSIZE * NUMBITS */
+
+static unsigned long myhashtable[ARRAYSIZE];
+static unsigned long mybitmasks[] = {
+0x1,                0x2,                0x4,                0x8, 
+0x10,               0x20,               0x40,               0x80, 
+0x100,              0x200,              0x400,              0x800, 
+0x1000,             0x2000,             0x4000,             0x8000, 
+0x10000,            0x20000,            0x40000,            0x80000, 
+0x100000,           0x200000,           0x400000,           0x800000, 
+0x1000000,          0x2000000,          0x4000000,          0x8000000, 
+0x10000000,         0x20000000,         0x40000000,         0x80000000, 
+0x100000000,        0x200000000,        0x400000000,        0x800000000, 
+0x1000000000,       0x2000000000,       0x4000000000,       0x8000000000, 
+0x10000000000,      0x20000000000,      0x40000000000,      0x80000000000, 
+0x100000000000,     0x200000000000,     0x400000000000,     0x800000000000, 
+0x1000000000000,    0x2000000000000,    0x4000000000000,    0x8000000000000, 
+0x10000000000000,   0x20000000000000,   0x40000000000000,   0x80000000000000,  
+0x100000000000000,  0x200000000000000,  0x400000000000000,  0x800000000000000, 
+0x1000000000000000, 0x2000000000000000, 0x4000000000000000, 0x8000000000000000}; 
+%}
+
+function my_keepcount(filenum:long, blocknum:long) %{
+  unsigned long myarrayindex;
+  unsigned long mybitmask;
+  unsigned long myindex;
+
+  myindex = (STAP_ARG_blocknum + (STAP_ARG_filenum * 0x100000000)) % HASHPRIME;
+
+  myarrayindex = myindex / NUMBITS;
+  mybitmask = mybitmasks[(myindex % NUMBITS)];
+
+  if (myarrayindex >= ARRAYSIZE)
+      STAP_RETURN(-1);  /* error */
+
+  if ( (myhashtable[myarrayindex] & mybitmask) == 0 ) {
+     myhashtable[myarrayindex] |= mybitmask;
+     STAP_RETURN(1);    /* new block read */
+  }
+  else
+     STAP_RETURN(0);    /* repeated read */
+%}
+
+global num_total_ios
+global num_distinct_blocks
+
+probe process("oracle").function("kcbzvb") {  # data blocks who have undergone an I/O operation
+       filenum=register("rsi")
+       blocknum=register("rdx")
+       result=my_keepcount(filenum,blocknum)
+       num_total_ios++
+       if (result == 1)
+          num_distinct_blocks++
+       if (result == -1)
+          printf("Error!\n")
+}
+
+probe timer.s(3)
+{
+  printf("number of distinct blocks read: %ld, total number of blocks read: %ld\n", 
+         num_distinct_blocks, num_total_ios)
+}
+

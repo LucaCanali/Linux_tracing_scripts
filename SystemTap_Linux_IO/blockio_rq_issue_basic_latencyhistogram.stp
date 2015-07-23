@@ -1,0 +1,39 @@
+#!/usr/bin/stap
+#
+# blockio_rq_issue_basic_latencyhistogram.stp
+#
+# This is a SystemTap script to gather block I/O latency from the Linux kernel block I/O interface
+# and print I/O latency histograms 
+#
+# See also blockio_rq_issue_latencyhistogram.stp and blockio_rq_issue_filter_latencyhistogram.stp
+# for more sophisticated versions of this
+#
+# By Luca.Canali@cern.ch, March 2015
+#
+# This script is based on original ideas of biolatency-nd.stp of systemtap-lwtools
+# by Brendan Gregg
+#
+# Note the use of kernel.trace("block_rq_issue") and kernel.trace("block_rq_complete") 
+# this allows the probe to work without the need to install kernel debuginfo
+#
+
+global LatencyTimes, RequestTime
+
+probe kernel.trace("block_rq_issue") {
+        RequestTime[$rq] = gettimeofday_us()
+}
+
+probe kernel.trace("block_rq_complete") {
+   t = gettimeofday_us()
+   s = RequestTime[$rq]
+   if (s > 0) {
+       LatencyTimes <<< (t-s)
+       delete RequestTime[$rq]
+   }
+}
+
+probe timer.sec(3) {
+   if (@count(LatencyTimes) > 0)
+       println(@hist_log(LatencyTimes))
+   delete(LatencyTimes)
+}

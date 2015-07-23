@@ -1,0 +1,56 @@
+#!/usr/local/bin/stap
+#
+# histograms_oracle_events_version_independent.stp
+#
+# This is a SystemTap script to gather wait event details from Oracle and print 
+# wait event latency histograms
+#
+# Dependencies: 
+#    Use SystemTap 2.5 or higher
+#    Kernel must have support for uprobes or utrace (this seems the case for example RHEL7.0 and 6.5)
+#    The oracle executable should be in the path: add $ORACLE_HOME/bin in $PATH
+#
+# Tested on: RHEL6.5 with Oracle 11.2.0,4 and on OL7.0 with Oracle 12.1.0.2
+#
+# How to run: stap -v histograms_oracle_events_version_independent.stp
+# Note optionally add -x <pid> to limit data collection to 1 process
+#
+# Version 1.0, Aug 2014 by Luca.Canali@cern.ch
+# Additional credits for original contributions: @FritsHoogland
+#
+# Note: this is experimental code, use at your own risk
+# 
+
+global eventlatency[2000]
+global waittime[2000]
+
+# gather and aggregate wait event latency details into a histogram
+probe process("oracle").function("kews_update_wait_time") {
+   # update the wait time, the wait event number is captured in the call to kskthewt
+   wait_time = u32_arg(2)
+   # some false positives have wait_time =0 in particular for background processes, we ignore them
+   if (wait_time > 0) {
+      waittime[pid()] = wait_time
+   }
+}
+
+ 
+probe process("oracle").function("kskthewt") {
+   # the event number is in arg2
+   event=u32_arg(2)
+   # the wait_time was previously recorded into the waittime array
+   eventlatency[event] <<< waittime[pid()]
+}
+
+
+# print histogram details every 10 seconds and reset the counters in eventlatency[]
+probe timer.sec(10) {
+    printf("\nDate: %s\n\n",tz_ctime(gettimeofday_s()))
+    foreach ([event] in eventlatency) {
+       printf("Latency histogram (value=latency in microsec) for event#=%d\n",event)
+       print(@hist_log(eventlatency[event]))
+    }
+    # comment this if you prefer that histograms grow comulative instead
+    delete eventlatency
+}
+

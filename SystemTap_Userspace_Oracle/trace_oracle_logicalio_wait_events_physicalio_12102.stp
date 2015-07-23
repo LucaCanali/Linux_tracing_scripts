@@ -1,0 +1,164 @@
+#!/usr/local/bin/stap
+#
+# trace_logicalio_wait_events_physicalio_12102.stp
+#
+# This is a SystemTap probe to trace logical I/O wait events and physical I/O  
+# the script works by hooking into the OS syscalls and to Oracle kernel functions
+#
+# Dependencies (for Oracle userspace tracing): 
+#    Use systemtap 2.5 or higher 
+#    Kernel must have support for uprobes or utrace (this is the case for RHEL7.0 and 6.5/6.6)
+#    The oracle executable should be in the path: add $ORACLE_HOME/bin in $PATH
+#
+#
+# Usage: stap -v trace_logicalio_wait_events_physicalio_12102.stp -x <pid>
+#
+# This script version is for Oracle 12.1.0.2, support for other Oracle versions also available 
+# see also trace_logicalio_wait_events_physicalio_11204.stp
+#
+# Version 1.0, Oct 2014 by Luca.Canali@cern.ch
+# Additional credits for original contributions: @FritsHoogland
+# Logical I/O probes kcbgtcr and kcbgcur, from original work by Alexander Anokhin and @TanelPoder
+#
+# Note: This is experimental code, use at your own risk
+#       The overhead of this code can be high, use rather on test systems
+# 
+
+
+####################
+# Trace Logical IO # 
+####################
+
+probe process("oracle").function("kcbgtcr") {  # consistent reads
+    pointer_lio=register("rdi")
+    printf("DB LOGICAL IO Consistent Read (kcbgtcr) for block: tbs#=%ld, rfile#=%d, block#=%d, bigfile_block#=%d, obj#=%ld\n",
+            user_int32(pointer_lio), user_int32(pointer_lio+4) >> 22 & 0x003FFFFF, user_int32(pointer_lio+4) & 0x003FFFFF, 
+            user_int32(pointer_lio+4), user_int32(pointer_lio+8))
+}
+
+probe process("oracle").function("kcbgcur") {  # current reads
+    pointer_lio=register("rdi")
+    printf("DB LOGICAL IO Current Read (kcbgcur) for block: tbs#=%ld, rfile#=%d, block#=%d, bigfile_block#=%d, obj#=%ld\n",
+            user_int32(pointer_lio), user_int32(pointer_lio+4) >> 22 & 0x003FFFFF, user_int32(pointer_lio+4) & 0x003FFFFF, 
+            user_int32(pointer_lio+4), user_int32(pointer_lio+8))
+}
+
+probe process("oracle").function("kcbzib") {  # initiates physical reads into buffer cache
+    printf("  ->kcbzib, Oracle logical read operations require physical reads into the buffer cache\n")
+}
+
+probe process("oracle").function("kcbzgb") { # prepares physical read into buffer cache
+   printf("     -> kcbzgb, Oracle has allocated buffer cache space for block: tbs#=%ld, rfile#=%d, block#=%d, bigfile_block#=%d, obj#=%ld\n",
+          register("rsi"), register("rdx") >> 22 & 0x003FFFFF, register("rdx") & 0x003FFFFF, register("rdx"), register("r8"))
+}
+
+probe process("oracle").function("kcbzvb") {  # data blocks who have undergone an I/O operation 
+       printf("  ->kcbzvb, Oracle has performed I/O on: file#=%ld, block#=%d, rfile#=%d, bigfile_block#=%d\n", 
+              register("rsi"), register("rdx") & 0x003FFFFF, register("rdx") >> 22 & 0x003FFFFF, register("rdx"))
+}
+
+
+#####################
+# Trace wait events #
+#####################
+
+probe process("oracle").function("kskthbwt") {
+   xksuse = register("r13")-3928
+   ksusenum = user_uint16(xksuse + 1704)
+   printf("==========\nDB WAIT EVENT BEGIN: timestamp_ora=%ld, pid=%d, sid=%d, event#=%u\n",
+          register("rsi"), pid(), ksusenum, register("rdx"))
+}
+
+probe process("oracle").function("kskthewt") {
+   xksuse = register("r13") - 3928
+   ksuudnam = user_string(xksuse + 140)
+   ksusenum = user_uint16(xksuse + 1704)
+   ksuseopc = user_uint16(xksuse + 1602)
+   ksusep1 = user_uint64(xksuse + 1608)
+   ksusep2 = user_uint64(xksuse + 1616)
+   ksusep3 = user_uint64(xksuse + 1624)
+   ksusetim = user_uint32(xksuse + 1632)
+   ksusesqh = user_uint32(xksuse + 1868)
+   ksuseobj = user_uint32(xksuse + 2312)
+   printf("DB WAIT EVENT END: timestamp_ora=%ld, pid=%d, sid=%d, name=%s, event#=%u, p1=%lu, p2=%lu, p3=%lu, wait_time=%u, obj=%d, sql_hash=%u\n==========\n",
+           register("rdi"), pid(), ksusenum, ksuudnam, ksuseopc, ksusep1, ksusep2, ksusep3, ksusetim, ksuseobj, ksusesqh)
+}
+
+
+###########################
+# Trace Physical IO - ASM #
+###########################
+
+global active_bio[10000]
+
+probe syscall.pread, syscall.pwrite {
+  if (pid() == target()) {  
+     printf ("OS: ->%s: timestamp=%d, program=%s, pid=%d, fd=%d, offset=%d, count(bytes)=%d\n", name, local_clock_us(), execname(), pid(), fd, offset, count)
+  }
+}
+
+probe syscall.pread.return, syscall.pwrite.return {
+  if (pid() == target()) {  
+     printf ("OS: <-%s: timestamp=%d, program=%s, local_clock_us(), pid=%d, return(bytes)=%d\n", name, local_clock_us(), execname(), pid(), $return)
+  }
+}
+
+probe syscall.io_submit {
+  if (pid() == target()) {
+     printf ("OS: ->%s: timestamp=%d, program=%s, pid=%d, nr(num I/O)=%d\n", name, local_clock_us(), execname(), pid(), nr)
+     for (i=0; i<$nr; i++) {
+         printf("              %d: file descriptor=%d, offset=%d, bytes=%d, opcode=%d\n", i+1, $iocbpp[i]->aio_fildes, 
+                $iocbpp[i]->aio_offset, $iocbpp[i]->aio_nbytes, $iocbpp[i]->aio_lio_opcode)
+     }
+  }
+}
+
+probe syscall.io_submit.return {
+  if (pid() == target()) {  
+     printf ("OS: <-%s: timestamp=%d, program=%s, pid=%d, return(num I/O)=%ld\n", name, local_clock_us(), execname(), pid(), $return)
+  }
+}
+
+probe syscall.io_getevents {
+  if (pid() == target()) {
+     printf ("OS: ->%s: timestamp=%d, program=%s, pid=%d, min_nr=%d, timeout=%s\n", name, local_clock_us(), execname(), pid(), min_nr, $timeout$)
+  }
+}
+
+probe syscall.io_getevents.return {
+  if (pid() == target()) {
+     printf ("OS: <-%s: timestamp=%d, program=%s, pid=%d, return(num I/O)=%ld\n", name, local_clock_us(), execname(), pid(), $return)
+     for (i=0; i<$return; i++) {    # cycle over the reaped I/Os
+        obj_addr = ($events)[i]->obj     # details of struct iocb in /usr/include/libaio.h
+        fildes = user_uint32(obj_addr +20)   
+        bytes = user_uint64(obj_addr +32) 
+        offset = user_uint64(obj_addr +40) 
+        printf("              %d:, fildes=%d, offset=%lu, bytes=%lu\n", i, fildes, offset, bytes)
+     }
+  }
+}
+
+probe ioblock.request {
+  if (pid() == target()) { 
+     printf("OS:    ->%s, timestamp=%d, pid=%d, devname=%s, sector=%d, size=%d, rw=%d, address_bio=%lu\n", 
+             name, local_clock_us(), pid(), devname, sector, size, rw, $bio )
+     active_bio[$bio] += 1      
+  }
+}
+
+probe ioblock_trace.request {
+  if (pid() == target()) { 
+     printf("OS:      ->%s, timestamp=%d, pid=%d, devname=%s, sector=%d, size=%d, rw=%d, address_bio=%lu\n", 
+             name, local_clock_us(), pid(), devname, sector, size, rw, $bio )
+  }
+}
+
+# the use of active_bio[] is a workaround as pid is not populated in ioblock.end and therefore cannot be used for filtering
+probe ioblock.end {
+  if (active_bio[$bio] >= 1) {
+    printf("OS:    <-%s, timestamp=%d, pid=%d, devname=%s, sector=%d, rw=%d, address_bio=%lu\n", 
+            name, local_clock_us(), pid(), devname, sector, rw, $bio)
+    active_bio[$bio] -= 1  
+  }
+}
+

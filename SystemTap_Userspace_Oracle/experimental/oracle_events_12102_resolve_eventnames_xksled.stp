@@ -1,0 +1,39 @@
+#!/usr/local/bin/stap
+#
+# stap script tracing oracle wait events
+#
+# Use: stap -v oracle_events_12102_resolve_eventnames.stp -x <pid>
+#
+# tested on: OL7 and Oracle 12.1.0.2
+#
+# wait event names are read from memory 
+#    - this works but under some circumstances: Oracle has to page-in the memory pages containing the even name strings, as stored in the oracle binary
+#    - for example if you have access to the session being traced page-in of the strings can be triggered by running: select * from v$event_name;
+#    - another method is to briefly enable 10046 trace for the session under study:
+#        exec dbms_monitor.session_trace_enable(<sid>,<serial#>) 
+#        exec dbms_monitor.session_trace_disable(<sid>,<serial#>)
+#
+# Version 1.0, Oct 2014 by Luca.Canali@cern.ch
+# Additional credits for original contributions: @FritsHoogland
+# Note: this is experimental code, use at your own risk
+#
+
+probe process("oracle").function("kskthewt") {
+   xksuse = register("r13")-3928
+   ksuudnam = user_string(xksuse + 140)
+   ksusenum = user_uint16(xksuse + 1704)
+   ksuseopc = user_uint16(xksuse + 1602)
+   ksusep1 = user_uint64(xksuse + 1608)
+   ksusep2 = user_uint64(xksuse + 1616)
+   ksusep3 = user_uint64(xksuse + 1624)
+   ksusetim = user_uint32(xksuse + 1632)
+   ksusesqh = user_uint32(xksuse + 1868)
+  
+   xksled = 0x015F0E6F00   # found querying the DB X$KSLED on 12.1.0.2
+   xksled_record_size = 0x38
+   event_string_pointer = user_int64(xksled+ksuseopc*xksled_record_size)
+   event_string = user_string(event_string_pointer)
+
+   printf("timestamp=%ld, pid=%d, sid=%d, name=%s, event#=%u, event=%s, p1=%lu, p2=%lu, p3=%lu, wait_time=%u, sql_hash=%u\n", 
+         u64_arg(1), pid(), ksusenum, ksuudnam, ksuseopc, event_string, ksusep1, ksusep2, ksusep3, ksusetim, ksusesqh)
+}

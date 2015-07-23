@@ -1,0 +1,76 @@
+#!/usr/bin/stap
+#
+# blockio_rq_issue_filter_latencyhistogram.stp
+#
+# This is a SystemTap script to gather block I/O latency from the Linux kernel block I/O interface
+#
+# By Luca.Canali@cern.ch, July 2015
+# This script is based on original ideas by Brendan Gregg see also biolatency-nd.stp and systemtap-lwtools
+#
+# The script blockio_rq_issue_filter_latencyhistogram.stp records latency histograms for block I/Os with filters
+# the default filters gather read operation of 8KB
+#
+# Note: the use of kernel.trace("block_rq_issue") and kernel.trace("block_rq_complete") allows the 
+# script to work without the need to install kernel debuginfo.
+#
+# Notes: struct bio, details at http://lxr.free-electrons.com/source/include/linux/blk_types.h
+#        struct request, details at http://lxr.free-electrons.com/source/include/linux/blkdev.h
+#
+# Usage: stap -v blockio_rq_issue_filter_latencyhistogram.stp <interval>
+#
+# Tested on Systemtap versions 1.8, 2,5 and 2.6, RHEL/OL 5,6,7
+# Note: this script requires minor changes from kernel 3.14 and higher to reflect struct bio changes
+#
+
+global LatencyTimes, RequestTime[100000]
+
+# variables used to define filters, edit as needed
+global IO_size = 8192    # this will be used as a filter for the I/O request size
+                         # the value 8192 targets 8KB operations for Oracle single-block I/O
+			             # use the value -1 to disable this filter
+global IO_operation = 0  # this will be used as a filter: only read operations, i.e. bit N.1 of bi_rw == 0
+                         # a value of 0 considers only read operations (the value 1 is for write) 
+			             # use the value -1 to disable this filter
+global IO_devmaj = -1    # this will be used as a filter: device major number ( -1 means no filter)
+                         # Example use the value 253 will consider only device 253 (device mapper block devices)
+global IO_devmin = -1    # this will be used as a filter: device minor number (or -1 if no filter)
+
+# probe on block I/O as it is issued, record the I/O if it matches the filters
+probe kernel.trace("block_rq_issue") {
+   t = gettimeofday_us()
+   # examine only the first bio record for simplicity (it seems that more than 1 bio is rare anyways)
+   # rq type is struct request
+   if ($rq->bio)                        # discard entries without a bio record
+      if ($rq->bio->bi_bdev)            # discard entries without a device associated
+         if ($rq->bio->bi_flags & 8)    # check BIO_SEG_VALID, introduced to avoid double counting with device mapper
+            if ($rq->bio->bi_size > 0)  # discard entries with size<=0
+               if ((IO_operation == -1) ||(($rq->bio->bi_rw & 0x1) == IO_operation)) # filter on operation type (read or write)
+                  if ((IO_size == -1) || ($rq->bio->bi_size == IO_size)) {           # filter on I/O size
+                     devmaj = $rq->bio->bi_bdev->bd_dev >> 20
+                     devmin = $rq->bio->bi_bdev->bd_dev - (devmaj << 20)	
+	             if ((devmaj == IO_devmaj ) || (IO_devmaj == -1))      # optional filter on device major number
+   	                if ((devmin == IO_devmin ) || (IO_devmin == -1))   # optional filter on device minor number
+                           RequestTime[$rq->bio] = t                       # record the start time of this block I/O
+                }
+}
+
+# I/O is finished, measure end time and add to histogram
+probe kernel.trace("block_rq_complete") {
+   t = gettimeofday_us()
+   if ($rq->bio) {                        # discard entries without a bio record
+       s = RequestTime[$rq->bio]
+       if (s > 0) {
+            LatencyTimes <<< (t-s)        # populates latency histogram
+            delete RequestTime[$rq->bio]  # clears the timer for this block I/O 
+       }
+   }
+}
+
+# print histogram every $1 seconds ($1 is the script parameter N.1) 
+probe timer.sec($1) {
+   if (@count(LatencyTimes) > 0)
+       println(@hist_log(LatencyTimes))
+   delete(LatencyTimes)
+}
+
+

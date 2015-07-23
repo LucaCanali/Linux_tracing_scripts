@@ -1,0 +1,35 @@
+#!/usr/bin/stap
+#
+# blockio_ioscheduler_latencyhistogram.stp
+#
+# This is a SystemTap script to gather block I/O latency from the Linux kernel block I/O interface
+# and print I/O latency histograms 
+#
+# By Luca.Canali@cern.ch, March 2015
+#
+# Note this script requires kernel debuginfo
+#
+
+global LatencyTimes, RequestTime
+
+probe ioscheduler.elv_next_request.return {
+   rq = $return
+   if (rq != 0) {
+       RequestTime[rq] = gettimeofday_us()
+   }
+}
+
+probe ioscheduler.elv_completed_request {
+  t = gettimeofday_us()
+  s = RequestTime[$rq]
+  delete RequestTime[$rq]
+  if (s > 0)
+     LatencyTimes <<< (t-s)
+}
+
+probe timer.sec(3) {
+   if (@count(LatencyTimes) > 0)
+       println(@hist_log(LatencyTimes))
+   delete(LatencyTimes)
+}
+

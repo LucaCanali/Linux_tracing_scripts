@@ -1,0 +1,54 @@
+#!/usr/local/bin/stap
+#
+# histograms_oracle_events_11204.stp
+#
+# This script reads Oracle wait event details from memory using SystemTap probes
+# See more details in the script trace_oracle_events_11204.stp
+#
+# Tested on: RHEL6.5 and Oracle 11.2.0.4
+# a similar script tested on RHEL7.0 and 12.1.0.2 is available
+#
+# Version 1.0, Aug 2014 by Luca.Canali@cern.ch
+# Additional credits for original contributions: @FritsHoogland
+#
+# Note: this is experimental code, use at your own risk
+# 
+
+global eventlatency[2000]
+
+# gather and aggregate wait event latency details into a histogram
+probe process("oracle").function("kskthewt") {
+   # this is the base value to read x$ksuse/v$session data from userspace memory
+   xksuse = register("r13")-7912
+
+   # uncomment the variable/xksuse fields as needed
+
+   # ksuudnam = user_string(xksuse + 132)
+   # ksusenum = user_uint16(xksuse + 5920)
+   ksuseopc = user_uint16(xksuse + 5826)
+   # ksusep1 = user_uint64(xksuse + 5832)
+   # ksusep2 = user_uint64(xksuse + 5840)
+   # ksusep3 = user_uint64(xksuse + 5848)
+   ksusetim = user_uint32(xksuse + 5856)
+   # ksusesqh = user_uint32(xksuse + 6084)
+
+   # this creates an aggregation of event wait latency detailed per event
+   # add filters on the available fileds and/or add aggregation columns if needed
+   eventlatency[ksuseopc] <<< ksusetim
+   
+   #debug code
+   #printf("event#=%d, wait_time=%d\n",ksuseopc, ksusetim)
+}
+
+
+# print histogram details every 10 seconds and reset the counters in eventlatency[]
+probe timer.sec(10) {
+    printf("\nDate: %s\n\n",tz_ctime(gettimeofday_s()))
+    foreach ([event] in eventlatency) {
+       printf("Latency histogram (value=latency in microsec) for event#=%d\n",event)
+       print(@hist_log(eventlatency[event]))
+    }
+    # comment out delete eventlatency if you prefer that histograms grow cumulative instead
+    delete eventlatency
+}
+

@@ -1,0 +1,46 @@
+#!/usr/local/bin/stap
+#
+# trace_oracle_events_11204.stp
+#
+# trace oracle wait events in systemtap by hooking on the oracle function kskthewt
+# kskthewt is called when Oracle updates the wait-related performance counters at the end of the wait.
+# The register R13 is found by trial and error to be a pointer into segmented array underlying X$KSUSE 
+# (roughly speaking a pointer to V$SESSION data). The offset between the value of the register R13 and 
+# the value of V$SESSION.SADDR for the process/session under examination depends on the Oracle version 
+# and patchset. 
+# Additional scripts used to generate this script:
+#    trace_oracle_events_debug.stp -> use to find the offset between R13 and the base value of X$KSSUE
+#    ksuse_find_offsets.sql        -> use to find the ofssets for the X$KSUSE fields to gather/disply 
+#    eventsname.sql                -> optionally use to create a sed script converting event# to event names
+# Note also that registers RDI (that is arg1) is set to the timestamp value  
+#      and the register RSI (that is arg2) is set to the wait event number
+# 
+# How to run: stap -v trace_oracle_events_11204.stp -x <oracle_pid>
+# Note: if the -x option is not used this script will trace all running oracle processes
+#
+# Dependencies: 
+#    Use systemtap 2.5 or higher
+#    Kernel must have support for uprobes or utrace (this seems the case for example RHEL7.0 and 6.5)
+#    The oracle executable should be in the path: add $ORACLE_HOME/bin in $PATH
+#
+# Tested on: RHEL6.5 and Oracle 11.2.0.4
+# a similar script tested on RHEL7 and 12.1.0.2 is available
+#
+# Version 1.0, Aug 2014 by Luca.Canali@cern.ch
+# Additional credits for original contributions: @FritsHoogland
+#
+# Note: this is experimental code, use at your own risk
+#
+
+probe process("oracle").function("kskthewt") {
+   xksuse = register("r13")-7912
+   ksuudnam = user_string(xksuse + 132)
+   ksusenum = user_uint16(xksuse + 5920)
+   ksuseopc = user_uint16(xksuse + 5826)
+   ksusep1 = user_uint64(xksuse + 5832)
+   ksusep2 = user_uint64(xksuse + 5840)
+   ksusep3 = user_uint64(xksuse + 5848)
+   ksusetim = user_uint32(xksuse + 5856)
+   ksusesqh = user_uint32(xksuse + 6084)
+   printf("timestamp=%ld, pid=%d, sid=%d, name=%s, event#=%u, p1=%lu, p2=%lu, p3=%lu, wait_time=%u, sql_hash=%u\n", u64_arg(1), pid(), ksusenum, ksuudnam, ksuseopc, ksusep1, ksusep2, ksusep3, ksusetim, ksusesqh)
+}

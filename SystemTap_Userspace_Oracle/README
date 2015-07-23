@@ -1,0 +1,18 @@
+
+
+This directory contains a short collection of SystemTap scripts for userspace probing of Oracle database processes, originally developed for troubleshooting and investigations of Oracle intervals.
+
+Author: Luca.Canali@cern.ch
+
+Acknowledgments: several original ideas on userspace invetigations of Oracle by @FritsHoogland
+
+Compatibility:
+
+The userspace scripts require Linux UTRACE or for more modern kernels, UPROBE. 
+   They have been tested to work under RHEL/OL 6.5, 6.6, and also 7.0. 
+   They It will not work on RHEL5.
+   Notably the scripts requiring UPROBE do not work with RHEL/OL 7.1 at present (i.e. kernel 3.10.0-229.x.x)
+
+The installation of Kernel debuginfo is needed for several of the scripts that also have OS probes. See details on the scripts' headers.
+
+

@@ -1,0 +1,26 @@
+#!/usr/local/bin/stap
+#
+# trace_oracle_logical_io_basic.stp
+#
+# This is a SystemTap probe to trace logical I/O by hooking into the Oracle kernel function kcbgtcr
+# This probe is a port to SystemTap of DTrace work by Tanel Poder, see qer_trace.sh 
+# A detailed analysis of logical IO using DTrace and the scrpt dtracelio.d can be found in 
+# Alexander Anokhin blog http://alexanderanokhin.wordpress.com/2011/11/13/dynamic-tracing-of-oracle-logical-io/ 
+#
+# Dependencies: 
+#    Use systemtap 2.5 or higher
+#    Kernel must have support for uprobes or utrace (this seems the case for example RHEL7.0 and 6.5)
+#    The oracle executable should be in the path: add $ORACLE_HOME/bin in $PATH
+#
+# How to run: stap -v histograms_oracle_events_version_independent.stp
+# Note optionally add -x <pid> to limit data collection to 1 process
+#
+# By Luca.Canali@cern.ch, Aug 2014 based on original work by Tanel Poder and Alexander Anokhin
+# Note: This is experimental code, use at your own risk
+#       The overhead of this code can be high, use rather on test systems
+#
+
+probe process("oracle").function("kcbgtcr") {
+    printf("tbs#=%d, rfile=%d, block#=%d, bigfile_block#=%d, obj#=%d\n",user_int32(u64_arg(1)), user_int32(u64_arg(1)+4) >> 22 & 0x003FFFFF, 
+           user_int32(u64_arg(1)+4) & 0x003FFFFF, user_int32(u64_arg(1)+4), user_int32(u64_arg(1)+8))
+}

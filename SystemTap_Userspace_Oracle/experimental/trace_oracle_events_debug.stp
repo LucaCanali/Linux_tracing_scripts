@@ -1,0 +1,33 @@
+#!/usr/local/bin/stap
+#
+# trace_oracle_events_debug.stp
+#
+# trace oracle wait events in systemtap by hooking on the oracle function kskthewt
+# kskthewt is called when Oracle updates the wait time at the end of the wait.
+# The register R13 is found by trial and error to be a pointer into segmented array underlying X$KSUSE 
+# (roughly speaking a pointer to V$SESSION.SADDR). The offset between the value of the register R13 and 
+# the value of V$SESSION.SADDR for the process/session under exmaination depends on the Oracle version and port
+# use this script to find the offset value.
+# Note also that registers RDI (that is arg1) is set to the timestamp value (as seen in the 10046 trace file) 
+# and the register RSI (that is arg2) is set to the wait event number
+# 
+# How to run: stap -v trace_oracle_events_debug.stp -x <oracle_pid>
+# Note:if the -x option is not used this script will trace all running oracle processes
+#
+# Dependencies: 
+#    systemtap 2.5 or higher
+#    kernel mustbe linked to support uprobes or utrace (for example RHEL7.0 and 6.5 respectively)
+#    add $ORACLE_HOME/bin in $PATH
+#
+# tested on: RHEL6.5 and OL7, Oracle 11.2.0.4 and 12.1.0.2
+#
+# Version 1.0, Aug 2014 by @LucaCanaliDB
+# Based on previous work by the author on DTrace probes in 2013
+# Additional credits: @FritsHoogland
+#
+
+probe process("oracle").function("kskthewt") {
+   printf("pid: %d, function: %s, arg1=%lx, arg2=%lx \n", pid(),ppfunc(),u64_arg(1),u64_arg(2))
+   printf("pid: %d, function: %s, arg1=%ld, arg2=%ld \n", pid(),ppfunc(),u64_arg(1),u64_arg(2))
+   print_regs()
+}

@@ -1,0 +1,54 @@
+#!/usr/bin/stap
+#
+# blockio_rq_issue_latencyhistogram.stp
+#
+# This is a SystemTap script to gather block I/O latency from the Linux kernel block I/O interface
+#
+# By Luca.Canali@cern.ch, July 2015
+# This script is based on original ideas by Brendan Gregg see also biolatency-nd.stp and systemtap-lwtools
+#
+# Note: the use of kernel.trace("block_rq_issue") and kernel.trace("block_rq_complete") allows the 
+# script to work without the need to install kernel debuginfo.
+#
+# Notes: struct bio, details at http://lxr.free-electrons.com/source/include/linux/blk_types.h
+#        struct request, details at http://lxr.free-electrons.com/source/include/linux/blkdev.h
+#
+# Usage: stap -v blockio_rq_issue_latencyhistogram.stp <sec>
+#
+# Tested on Systemtap versions 1.8, 2,5 and 2.6, RHEL/OL 5,6,7
+# Note: this script requires minor changes from kernel 3.14 and higher to reflect struct bio changes
+#
+
+global LatencyTimes, RequestTime[100000]
+
+# probe on block I/O as it is issued
+probe kernel.trace("block_rq_issue") {
+   t = gettimeofday_us()
+   # examine only the first bio record for simplicity (it seems that more than 1 bio is rare anyways)
+   # rq type is struct request
+   if ($rq->bio)                       # discard entries without a bio record
+      if ($rq->bio->bi_bdev)           # discard entries without a device associated
+         if ($rq->bio->bi_flags & 8)   # check BIO_SEG_VALID, introduced to avoid double counting with device mapper
+            if ($rq->bio->bi_size > 0)     # discard entries with size<=0
+               RequestTime[$rq->bio] = t   # record the start time of this block I/O
+}
+
+# I/O is finished, measure end time and add to histogram
+probe kernel.trace("block_rq_complete") {
+   t = gettimeofday_us()
+   if ($rq->bio) {                        # discard entries without a bio record
+       s = RequestTime[$rq->bio]
+       if (s > 0) {
+          LatencyTimes <<< (t-s)        # populates latency histogram
+          delete RequestTime[$rq->bio]  # clears the timer for this block I/O 
+       }
+   }
+}
+
+# print histogram every $1 seconds ($1 is the script parameter N.1) 
+probe timer.sec($1) {
+   if (@count(LatencyTimes) > 0)
+       println(@hist_log(LatencyTimes))
+   delete(LatencyTimes) 
+}
+
