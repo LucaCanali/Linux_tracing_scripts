@@ -21,6 +21,10 @@
 
 global LatencyTimes, RequestTime[100000]
 
+probe begin {
+   printf("Block I/O latency histograms from kernel trace points\n\n")
+}
+
 # probe on block I/O as it is issued
 probe kernel.trace("block_rq_issue") {
    t = gettimeofday_us()
@@ -47,8 +51,11 @@ probe kernel.trace("block_rq_complete") {
 
 # print histogram every $1 seconds ($1 is the script parameter N.1) 
 probe timer.sec($1) {
+   printf("Block I/O latency histogram, measurement time: %d seconds, I/O count: %d\n", $1, @count(LatencyTimes))
+   printf("Value = latency bucket (microseconds), count=I/O operations in %d seconds\n", $1)
    if (@count(LatencyTimes) > 0)
        println(@hist_log(LatencyTimes))
    delete(LatencyTimes) 
 }
+
 
