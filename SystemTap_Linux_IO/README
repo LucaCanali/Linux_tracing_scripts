@@ -15,10 +15,13 @@ blockio_rq_issue_latencyhistogram_new.stp        -> same as above with additiona
 blockio_rq_issue_filter_latencyhistogram.stp     -> block I/O histograms with additional configurable 
                                                     filters
 blockio_rq_issue_filter_latencyhistogram_new.stp -> same as above with additional optimizations only 
-                                                    for SystemTap 2.6 and higher
+                                                    for SystemTap 2.6 or higher
 blockio_latency_outliers_per_device.stp          -> gather stats on block I/O latency per disk and 
                                                     report events with latency greater then threshold
-blockio_rq_all_TRACE_EXPERIMENTAL.stp            -> tracing of block I/O, use for troubleshooting, 
+blockio_rq_all_TRACE_EXPERIMENTAL.stp            -> tracing of block I/O calls, use for troubleshooting, 
+                                                    beware of the overhead. Need SystemTap 2.6 or higher
+blockio_rq_filter_TRACE_EXPERIMENTAL.stp         -> tracing of block I/O with filters on device and 
+                                                    operation, use for troubleshooting, 
                                                     beware of the overhead
 
 The scripts here below produce block I/O histograms using ioblock and ioscheduler providers. 

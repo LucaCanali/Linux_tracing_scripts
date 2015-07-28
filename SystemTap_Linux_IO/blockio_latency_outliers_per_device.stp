@@ -82,7 +82,7 @@ probe kernel.trace("block_rq_complete") {
 }
 
 probe timer.sec($1) {
-   printf("I/O latency basic statistics per device, measurement time: %d seconds\n", $1)
+   printf("I/O latency basic statistics per device, measurement time: %d seconds\nLatency measured in microseconds\n", $1)
    printf("%-12s %14s %14s %14s %14s\n\n", "Disk name", "Num I/Os", "Min latency", "Avg latency", "Max latency")
    foreach ([disk] in LatencyTimes) {
             printf("%-12s %14d %14d %14d %14d\n",
