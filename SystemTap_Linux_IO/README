@@ -34,4 +34,6 @@ Tracing scripts for block I/O and for sync and async calls (including tracing li
 
 sync_asyncio_and_libiao_TRACE.stp                -> tracing of I/O calls including asynchronous I/O 
                                                     and libaio.  
+Additional references: 
+http://externaltable.blogspot.com/2015/07/diagnose-high-latency-io-operations.html
 
