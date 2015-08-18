@@ -2,7 +2,7 @@
 #
 # trace_oracle_events_12102.stp
 #
-# trace oracle wait events in systemtap by hooking on the oracle function kskthewt
+# Trace oracle wait events using SystemTap by hooking on the Oracle RDBMS function kskthewt
 # kskthewt is called when Oracle updates the wait-related performance counters at the end of the wait.
 # The register R13 is found by trial and error to be a pointer into segmented array underlying X$KSUSE 
 # (roughly speaking a pointer to V$SESSION data). The offset between the value of the register R13 and 
@@ -23,8 +23,9 @@
 #    Kernel must have support for uprobes or utrace (this seems the case for example RHEL7.0 and 6.5)
 #    The oracle executable should be in the path: add $ORACLE_HOME/bin in $PATH
 #
-# tested on: OL7 and Oracle 12.1.0.2
-# a similar script tested on RHEL6.5 and 11.2.0.4 is available
+# Software versions and compatibility:
+#     Linux RHEL/OL 6.x and 7.x 
+#     Oracle RDBMS 12.1.0.2
 #
 # Version 1.0, Aug 2014 by Luca.Canali@cern.ch
 # Additional credits for original contributions: @FritsHoogland

@@ -1,20 +1,21 @@
 #!/usr/local/bin/stap
 #
-# trace_oracle_wait_events_asyncio_libao_11204.stp
+# trace_oracle_wait_events_asyncio_libaio_11204.stp
 #
 # This is a SystemTap probe to trace logical I/O wait events and physical I/O  
 # the script works by hooking into the OS syscalls and to Oracle kernel functions
 #
 # Dependencies (for Oracle userspace tracing): 
 #    Use systemtap 2.5 or higher 
-#    Kernel must have support for uprobes or utrace (this is the case for RHEL7.0 and 6.5/6.6)
+#    Kernel must have support for uprobes or utrace (for example RHEL/EL 7.x and 6.x)
 #    The oracle executable should be in the path: add $ORACLE_HOME/bin in $PATH
+#    Needs kernel debuginfo
+#    Needs libaio debuginfo
 #
-#
-# Usage: stap -v trace_oracle_wait_events_asyncio_libao_11204.stp -x <pid>
+# Usage: stap -v trace_oracle_wait_events_asyncio_libaio_11204.stp -x <pid>
 #
 # This script version is for Oracle 11.2.0.4, support for other Oracle versions also available 
-# see trace_oracle_wait_events_asyncio_libao_12102.stp
+# see trace_oracle_wait_events_asyncio_libaio_12102.stp
 #
 # Version 1.0, Oct 2014 by Luca.Canali@cern.ch
 # Additional credits for original contributions: @FritsHoogland
@@ -27,11 +28,15 @@
 # Trace libaio     # 
 ####################
 
+# Dependencies: needs libaio debuginfo
+# Use systemtap 2.5 or higher (for Oracle userspace tracing) or comment out 
+# On some systems need to change "/usr/lib64/libaio.so" for "/lib64/libaio.so.1"   
+# Kernel must have support for uprobes or utrace (for example RHEL/OL 7.x and 6.x)
+
 probe process("/usr/lib64/libaio.so").function("io_getevents_0_4") {
     printf ("LIBAIO:->io_getevents_0_4: timestamp=%d, program=%s, pid=%d, min_nr=%d, timeout.tv_sec=%d\n",
-            local_clock_us(), execname(), pid(), $min_nr, @cast($timeout,"struct timespec","")->tv_sec)
+           local_clock_us(), execname(), pid(), $min_nr, @cast($timeout,"struct timespec","")->tv_sec)
 }
-
 
 ##############################
 # Trace wait events 11.2.0.4 #
@@ -72,19 +77,36 @@ probe syscall.pread, syscall.pwrite {
 
 probe syscall.pread.return, syscall.pwrite.return {
   if (pid() == target()) {  
-     printf ("OS: <-%s: timestamp=%d, program=%s, local_clock_us(), pid=%d, return(bytes)=%d\n", name, local_clock_us(), execname(), pid(), $return)
+     printf ("OS: <-%s: timestamp=%d, program=%s, pid=%d, return(bytes)=%d\n", name, local_clock_us(), execname(), pid(), $return)
   }
 }
 
-probe syscall.io_submit {
+# some ugly tricks added here for compatibility, in particular there seem to be problems in RHEL/EL 7.x debuginfo related to 
+# $iocbpp which is incorrectly reported as long int in those system instead of struct iocb**, also we use a trick to resolve the array 
+# the use of a probe on kernel.function instead of syscall.io_submit also needed for some platforms (RHEL 6.7)
+# See below for a more basic probe that works on RHEL and RHEL6.6
+probe kernel.function("sys_io_submit") {
   if (pid() == target()) {
-     printf ("OS: ->%s: timestamp=%d, program=%s, pid=%d, nr(num I/O)=%d\n", name, local_clock_us(), execname(), pid(), nr)
-     for (i=0; i<$nr; i++) {
-         printf("              %d: file descriptor=%d, offset=%d, bytes=%d, opcode=%d\n", i+1, $iocbpp[i]->aio_fildes, 
-                $iocbpp[i]->aio_offset, $iocbpp[i]->aio_nbytes, $iocbpp[i]->aio_lio_opcode)
-     }
+     printf ("OS: ->%s: timestamp=%d, program=%s, pid=%d, nr(num I/O)=%d\n", "io_submit", local_clock_us(), execname(), pid(), $nr)
+     for (i=0; i<$nr; i++) {  
+	     printf("              %d: file descriptor=%d, offset=%d, bytes=%d, opcode=%d\n", i+1, @cast(user_int64($iocbpp+8*i), "struct iocb")->aio_fildes, 
+         @cast(user_int64($iocbpp+8*i), "struct iocb")->aio_offset, @cast(user_int64($iocbpp+8*i), "struct iocb")->aio_nbytes, 
+		 @cast(user_int64($iocbpp+8*i), "struct iocb")->aio_lio_opcode)
+	 }
   }
 }
+
+# For reference this is the original probe on io_submit without the compatibility tricks used above
+# probe syscall.io_submit {
+#   if (pid() == target()) {
+#      printf ("OS: ->%s: timestamp=%d, program=%s, pid=%d, nr(num I/O)=%d\n", name, local_clock_us(), execname(), pid(), nr)
+#      for (i=0; i<$nr; i++) {
+#          printf("              %d: file descriptor=%d, offset=%d, bytes=%d, opcode=%d\n", i+1, $iocbpp[i]->aio_fildes, 
+#                 $iocbpp[i]->aio_offset, $iocbpp[i]->aio_nbytes, $iocbpp[i]->aio_lio_opcode)
+#      }
+#   }
+# }
+
 
 probe syscall.io_submit.return {
   if (pid() == target()) {  
@@ -98,16 +120,16 @@ probe syscall.io_getevents {
   }
 }
 
+# need to explicitly cast $events for RHEL/EL 7.x kernels, where debuginfo issues report $events as long int instead of struct io_event*
 probe syscall.io_getevents.return {
   if (pid() == target()) {
      printf ("OS: <-%s: timestamp=%d, program=%s, pid=%d, return(num I/O)=%ld\n", name, local_clock_us(), execname(), pid(), $return)
      for (i=0; i<$return; i++) {    # cycle over the reaped I/Os
-        obj_addr = ($events)[i]->obj     # details of struct iocb in /usr/include/libaio.h
+        obj_addr = @cast($events, "struct io_event")[i]->obj     # details of struct iocb in /usr/include/libaio.h
         fildes = user_uint32(obj_addr +20)   
         bytes = user_uint64(obj_addr +32) 
         offset = user_uint64(obj_addr +40) 
-        printf("              %d:, fildes=%d, offset=%lu, bytes=%lu\n", i, fildes, offset, bytes)
+        printf("              %d:, fildes=%d, offset=%lu, bytes=%lu\n", i+1, fildes, offset, bytes)
      }
   }
 }
-

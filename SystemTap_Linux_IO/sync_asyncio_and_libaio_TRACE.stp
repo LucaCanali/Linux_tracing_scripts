@@ -1,78 +1,44 @@
 #!/usr/local/bin/stap
 #
-# trace_oracle_wait_events_asyncio_libaio_12102.stp
+# sync_asyncio_and_libiaio_TRACE.stp
 #
-# This is a SystemTap probe to trace logical I/O wait events and physical I/O  
-# the script works by hooking into the OS syscalls and to Oracle kernel functions
+# This is a SystemTap probe to trace Linux I/O system calls, including async I/O originally 
+# developed to trace Oracle system calls for I/O processing.
 #
-# Dependencies (for Oracle userspace tracing): 
-#    Use systemtap 2.5 or higher 
-#    Kernel must have support for uprobes or utrace (for example RHEL/OL 7.x and 6.x)
-#    The oracle executable should be in the path: add $ORACLE_HOME/bin in $PATH
-#    Needs kernel debuginfo
-#    Needs libaio debuginfo
+# Dependencies: 
+#    needs kernel debuginfo
+#    additional dependencies are listed for tracing libaio 
+#    by default the libaio probe for io_getevents_0_4 is commented out, uncomment if you need it
 #
-# Notable exception and issue with Oracle 12.1.0.2: 
-# this script will throw "inode-offset registration error" when run against 12.1.0.2 on 
-# RHEL/OL7.1 (i.e. kernel 3.10.0-229.x). The workaround is to use an older kernel
-# such as RHEL/OL7.0 (kernel 3.10.0-123.x). It seems to work fine on RHEL/OL 7.1 and 11g.
-
+# Compatibility: tested on RHEL/OL 5.10, 6.x and 7.x
 #
-# Usage: stap -v trace_oracle_wait_events_asyncio_libaio_12102.stp -x <pid>
-#
-# This script version is for Oracle 12.1.0.2, support for other Oracle versions also available 
-# see trace_oracle_wait_events_asyncio_libao_11204.stp
+# Usage: stap -v sync_asyncio_and_libiaio_TRACE.stp -x <pid>
 #
 # Version 1.0, Oct 2014 by Luca.Canali@cern.ch
+# Latest updates, August 2015.
 # Additional credits for original contributions: @FritsHoogland
 #
-# Note: This is experimental code, use at your own risk
-#       The overhead of this code can be high, use rather on test systems
+# Note: this is experimental code, use at your own risk
 # 
 
 ####################
-# Trace libaio     # 
+# Trace libaio     #
 ####################
 
 # Dependencies: needs libaio debuginfo
 # Use systemtap 2.5 or higher (for Oracle userspace tracing) or comment out 
 # On some systems need to change "/usr/lib64/libaio.so" for "/lib64/libaio.so.1"   
 # Kernel must have support for uprobes or utrace (for example RHEL/OL 7.x and 6.x)
+# Uncomment the probe code here below if you want to trace libaio.io_getevents calls
 
-probe process("/usr/lib64/libaio.so").function("io_getevents_0_4") {
-    printf ("LIBAIO:->io_getevents_0_4: timestamp=%d, program=%s, pid=%d, min_nr=%d, timeout.tv_sec=%d\n",
-           local_clock_us(), execname(), pid(), $min_nr, @cast($timeout,"struct timespec","")->tv_sec)
-}
+# probe process("/usr/lib64/libaio.so").function("io_getevents_0_4") {
+#     printf ("LIBAIO:->io_getevents_0_4: timestamp=%d, program=%s, pid=%d, min_nr=%d, timeout.tv_sec=%d\n",
+#            local_clock_us(), execname(), pid(), $min_nr, @cast($timeout,"struct timespec","")->tv_sec)
+# }
 
-##############################
-# Trace wait events 12.1.0.2 #
-##############################
-
-probe process("oracle").function("kskthbwt") {
-   xksuse = register("r13")-3928
-   ksusenum = user_uint16(xksuse + 1704)
-   printf("==========\nDB WAIT EVENT BEGIN: timestamp_ora=%ld, pid=%d, sid=%d, event#=%u\n",
-          register("rsi"), pid(), ksusenum, register("rdx"))
-}
-
-probe process("oracle").function("kskthewt") {
-   xksuse = register("r13") - 3928
-   ksuudnam = user_string(xksuse + 140)
-   ksusenum = user_uint16(xksuse + 1704)
-   ksuseopc = user_uint16(xksuse + 1602)
-   ksusep1 = user_uint64(xksuse + 1608)
-   ksusep2 = user_uint64(xksuse + 1616)
-   ksusep3 = user_uint64(xksuse + 1624)
-   ksusetim = user_uint32(xksuse + 1632)
-   ksusesqh = user_uint32(xksuse + 1868)
-   ksuseobj = user_uint32(xksuse + 2312)
-   printf("DB WAIT EVENT END: timestamp_ora=%ld, pid=%d, sid=%d, name=%s, event#=%u, p1=%lu, p2=%lu, p3=%lu, wait_time=%u, obj=%d, sql_hash=%u\n==========\n",
-           register("rdi"), pid(), ksusenum, ksuudnam, ksuseopc, ksusep1, ksusep2, ksusep3, ksusetim, ksuseobj, ksusesqh)
-}
-
-###########################
-# Trace Physical IO - ASM #
-###########################
+######################
+# Trace Physical IO  #
+######################
 
 probe syscall.pread, syscall.pwrite {
   if (pid() == target()) {  

@@ -12,12 +12,14 @@
 #
 # Notes: struct bio, details at http://lxr.free-electrons.com/source/include/linux/blk_types.h
 #        struct request, details at http://lxr.free-electrons.com/source/include/linux/blkdev.h
-#        this version requires Systemtap 2.6 or higher
+#        *this version requires Systemtap 2.6 or higher*
 #
 # Usage: stap -v blockio_rq_issue_latencyhistogram_new.stp <sec>
 #
 # Tested on Systemtap versions 2.6 and RHEL/OL 7
-# Note: this script requires minor changes from kernel 3.14 and higher to reflect struct bio changes
+# Note: this script will not work on some recent kernels due for example to changes to 
+# kernel.trace probes and to struct bio
+#
 
 global LatencyTimes, RequestTime[100000]
 

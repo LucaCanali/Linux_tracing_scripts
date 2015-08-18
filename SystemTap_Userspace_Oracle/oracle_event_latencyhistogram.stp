@@ -13,17 +13,28 @@
 #       increase the max number of UPROBES. For example:
 #       stap -v -DMAXUPROBES=1500 oracle_event_latency.stp <event_num>
 #
-# Find the value of <event_num> of interest using Oracle SQL*plus. Examples:
-#   select event#,name from v$event_name where name='db file sequential read';
-#   select event#,name from v$event_name where name='log file sync';
-#
+# Prerequisite: find the value of <event_num> of interest using Oracle SQL*plus. 
+# Example SQL:
+#   select event#,name from v$event_name where name in ('db file sequential read', 'log file sync');
+#   12.1.0.2 output: 
+# EVENT# NAME
+# ------- ------------------------
+#     146 log file sync
+#     153 db file sequential read
+# 
 # Dependencies: 
 #    Needs SystemTap version 2.5 or higher
 #    Kernel must have support for uprobes or utrace (use RHEL7.x or RHEL6.x)
 #    The oracle executable needs to be in the path, i.e. add $ORACLE_HOME/bin to $PATH
 #
-# Tested on: RHEL/OL 6.5, 6.6 and 7.0, Oracle 11.2.0.4, 12.1.0.1, 12.1.0.2
-#            note, currently this script does not work with RHEL 7.1 (i.e. kernel 3.10.0-229.x.x)
+# Software versions and compatibility:
+#     Linux RHEL/OL 6.x and 7.x 
+#     Oracle RDBMS 11.2.0.x and 12.1.0.x
+#
+# Notable exception and issue with Oracle 12.1.0.2: 
+# this script will throw "inode-offset registration error" when run against 12.1.0.2 on 
+# RHEL/OL7.1 (i.e. kernel 3.10.0-229.x). The workaround is to use an older kernel
+# such as RHEL/OL7.0 (kernel 3.10.0-123.x). It seems to work fine on RHEL/OL 7.1 and 11g.
 #
 # Author: Luca.Canali@cern.ch (@LucaCanaliDB)
 # Additional credits for original contributions: @FritsHoogland

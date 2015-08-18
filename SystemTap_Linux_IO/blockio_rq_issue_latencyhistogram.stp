@@ -16,7 +16,8 @@
 # Usage: stap -v blockio_rq_issue_latencyhistogram.stp <sec>
 #
 # Tested on Systemtap versions 1.8, 2,5 and 2.6, RHEL/OL 5,6,7
-# Note: this script requires minor changes from kernel 3.14 and higher to reflect struct bio changes
+# Note: this script will not work on some recent kernels due for example to changes to 
+# kernel.trace probes and struct bio
 #
 
 global LatencyTimes, RequestTime[100000]

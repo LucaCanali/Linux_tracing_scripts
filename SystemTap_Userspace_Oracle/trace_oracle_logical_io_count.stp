@@ -8,7 +8,7 @@
 #
 # Dependencies: 
 #    Use systemtap 2.5 or higher
-#    Kernel must have support for uprobes or utrace (this seems the case for example RHEL7.0 and 6.5)
+#    Kernel must have support for uprobes or utrace (this is the case for example for RHEL7.x and 6.x)
 #    The oracle executable should be in the path: add $ORACLE_HOME/bin in $PATH
 #
 # How to run: stap -v trace_oracle_logical_io_count.stp

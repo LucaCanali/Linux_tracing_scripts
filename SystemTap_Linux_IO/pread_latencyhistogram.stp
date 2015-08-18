@@ -10,7 +10,7 @@
 # This script is based on original ideas of biolatency-nd.stp of systemtap-lwtools
 # by Brendan Gregg 
 #
-# Note: this probe does not need to have kernel debug info installed
+# Note: this probe does not need to have kernel debuginfo installed
 #
 # Usage: stap -v pread_latencyhistogram.stp <interval>
 #

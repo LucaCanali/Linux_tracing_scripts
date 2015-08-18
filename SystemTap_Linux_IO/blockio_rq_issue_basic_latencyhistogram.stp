@@ -6,7 +6,7 @@
 # and print I/O latency histograms 
 #
 # See also blockio_rq_issue_latencyhistogram.stp and blockio_rq_issue_filter_latencyhistogram.stp
-# for more sophisticated versions of this
+# for more sophisticated versions of this type of latency measurement
 #
 # By Luca.Canali@cern.ch, March 2015
 #

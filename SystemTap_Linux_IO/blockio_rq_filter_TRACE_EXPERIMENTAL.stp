@@ -7,7 +7,10 @@
 #
 # Luca.Canali@cern.ch
 # July 2015
-# This script requires minor changes for kernel version 3.14 and higher to reflect changes in  struct bio
+# Requires SystemTap 2.6 or higher
+# Tested on RHEL/EL 6.x,7.x
+# Note: this script will not work on some recent kernels due for example to changes to 
+# kernel.trace probes and to struct bio
 #
 # Usage: stap -v blockio_rq_filter_TRACE_EXPERIMENTAL.stp
 #

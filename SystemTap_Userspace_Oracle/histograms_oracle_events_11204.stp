@@ -3,10 +3,16 @@
 # histograms_oracle_events_11204.stp
 #
 # This script reads Oracle wait event details from memory using SystemTap probes
-# See more details in the script trace_oracle_events_11204.stp
+# See more details of how this works in the script trace_oracle_events_11204.stp
 #
-# Tested on: RHEL6.5 and Oracle 11.2.0.4
-# a similar script tested on RHEL7.0 and 12.1.0.2 is available
+# Dependencies and prerequisites: 
+#    Use SystemTap 2.5 or higher
+#    Kernel must have support for uprobes or utrace (for example RHEL/OL 7.x and 6.x)
+#    The oracle DB executable should be in the path: add $ORACLE_HOME/bin in $PATH
+#
+# Software versions and compatibility:
+#     Linux RHEL/OL 6.x and 7.x 
+#     Oracle RDBMS 11.2.0.4
 #
 # Version 1.0, Aug 2014 by Luca.Canali@cern.ch
 # Additional credits for original contributions: @FritsHoogland

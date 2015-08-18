@@ -5,12 +5,19 @@
 # This is a SystemTap script to gather wait event details from Oracle and print 
 # wait event latency histograms
 #
-# Dependencies: 
+# Dependencies and prerequisites: 
 #    Use SystemTap 2.5 or higher
-#    Kernel must have support for uprobes or utrace (this seems the case for example RHEL7.0 and 6.5)
-#    The oracle executable should be in the path: add $ORACLE_HOME/bin in $PATH
+#    Kernel must have support for uprobes or utrace (for example RHEL/OL 7.x and 6.x)
+#    The oracle DB executable should be in the path: add $ORACLE_HOME/bin in $PATH
 #
-# Tested on: RHEL6.5 with Oracle 11.2.0,4 and on OL7.0 with Oracle 12.1.0.2
+# Software versions and compatibility:
+#     Linux RHEL/OL 6.x and 7.x 
+#     Oracle RDBMS 11.2.0.x and 12.1.0.x
+#
+# Notable exception and issue with Oracle 12.1.0.2: 
+# this script will throw "inode-offset registration error" when run against 12.1.0.2 on 
+# RHEL/OL7.1 (i.e. kernel 3.10.0-229.x). The workaround is to use an older kernel
+# such as RHEL/OL7.0 (kernel 3.10.0-123.x). It seems to work fine on RHEL/OL 7.1 and 11g.
 #
 # How to run: stap -v histograms_oracle_events_version_independent.stp
 # Note optionally add -x <pid> to limit data collection to 1 process

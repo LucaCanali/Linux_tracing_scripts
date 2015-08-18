@@ -5,6 +5,7 @@ Luca.Canali@cern.ch
 This directory contains SystemTap scripts of help for troubleshooting and investigating Linux I/O.
 The following probes are for investigating I/O latency and/or tracing at the level of the block I/O interface.  They are variations of the same idea: measuring I/O from kernel.trace("block_rq_issue") to kernel.trace("block_rq_complete").
 This has the added advantage of working *without* kernel debuginfo, as in the original ideas of BrendanGregg's https://github.com/brendangregg/systemtap-lwtools
+The scripts based on kernel.trace("block_rq_issue") and kernel.trace("block_rq_complete") have been tested on RHEL/OL 5,6,7 (i.e. up to kernel 3.10) however they will most likely not work with more recent kernels due for example to changes to kernel.trace probes and to struct bio.
 
 SCRIPT NAME                                      -> SHORT DESCRIPTION
 blockio_rq_issue_basic_latencyhistogram.stp      -> basic script to measure latency histograms for 
@@ -33,7 +34,7 @@ blockio_ioscheduler_latencyhistogram.stp         -> latency histograms using the
 Tracing scripts for block I/O and for sync and async calls (including tracing libaio)
 
 sync_asyncio_and_libiao_TRACE.stp                -> tracing of I/O calls including asynchronous I/O 
-                                                    and libaio.  
+                                                    and (optioanlly) libaio.  
 Additional references: 
 http://externaltable.blogspot.com/2015/07/diagnose-high-latency-io-operations.html
 
