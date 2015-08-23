@@ -4,7 +4,7 @@ Author: Luca.Canali@cern.ch
 
 This repository contains scripts and tools for troubleshooting and performance analysis in Linux. This includes dynamic tracing scripts with SystemTap both for system calls and for userspace function tracing.
 
-DIRECTORY                  SHORT DESCRIPTION
+DIRECTORY                     SHORT DESCRIPTION
 SystemTap_Linux_IO         -> SystemTap scripts for Linux I/O tracing and 
                               I/O latency measurements
 SystemTap_Userspace_Oracle -> SystemTap scripts for Oracle RDBMS troubleshooting and
