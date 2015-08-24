@@ -19,8 +19,8 @@ blockio_rq_issue_filter_latencyhistogram_new.stp -> same as above with additiona
                                                     for SystemTap 2.6 or higher
 blockio_latency_outliers_per_device.stp          -> gather stats on block I/O latency per disk and 
                                                     report events with latency greater then threshold
-blockio_rq_all_TRACE_EXPERIMENTAL.stp            -> tracing of block I/O calls, use for troubleshooting, 
-                                                    beware of the overhead. Need SystemTap 2.6 or higher
+blockio_rq_all_TRACE_EXPERIMENTAL.stp            -> trace block I/O calls, use for troubleshooting, 
+                                                    beware of the overhead. SystemTap 2.6 or higher
 blockio_rq_filter_TRACE_EXPERIMENTAL.stp         -> tracing of block I/O with filters on device and 
                                                     operation, use for troubleshooting, 
                                                     beware of the overhead
