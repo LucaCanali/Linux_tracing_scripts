@@ -1,0 +1,47 @@
+#!/usr/local/bin/stap
+#
+# This is a script for live filtering Oracle SQL
+#    1. The Oracle probe on opiprs catches all the hard parsing of SQL
+#    2. The SQL statement matched against KEYWORD_TO_BLOCK
+#    3. If a match is found the SQL parsing is blocked (the Oracle session will receive an error)
+#
+# This is example code, not intended to be used in production
+# Requires SystemTap guru mode as it overwrites memory
+#
+# Use: stap -g -v filterSQL_opiprs.stp
+# Note: optionally add -x <pid> to limit the action to <pid> only (default is for all oracle sessions)
+#
+# Oracle binary is expected to be in the PATH: export PATH=$PATH:$ORACLE_HOME/bin
+# run as priviledge user (root)
+#
+# Compatibility: tested for Oracle 11.2.0.4 on RHEL/OL 6 and 7
+#                tested for Oracle 12.1.0.2 on RHEL/OL 6 and 7 with kernel up to 3.10.0-123.x
+#                issue: uprobes for kernel higher than 3.10.0-123.x will not work on Oracle 12c
+#				 SystemTap version 2.5 or higher. Kernel debuginfo not needed for this probe.
+#
+# Author: Luca.Canali@cern.ch
+# Created: Nov 2014, Last updated: Feb 2016.
+#
+
+global KEYWORD_TO_BLOCK = "UNWANTED SQL"
+
+function block_parse(pointersql:long) %{
+    char *sqltext;
+
+    sqltext = (char *) STAP_ARG_pointersql;
+     /* Modify the SQL text with an end of line: this will throw ORA-00900: invalid SQL statement */
+	sqltext[0] = 0;
+%}
+
+
+probe process("oracle").function("opiprs") {
+   sqltext = user_string2(register("rsi"),"error")
+   # debug code
+   # sqllength = register("rdx")
+   # printf("opiParse: arg2=%s, arg3=%d\n",sqltext,sqllength)
+   if (isinstr(sqltext, KEYWORD_TO_BLOCK)) {
+      printf("FOUND!\n")
+      block_parse(register("rsi"))
+   }
+}
+

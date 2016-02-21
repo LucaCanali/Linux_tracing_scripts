@@ -1,0 +1,9 @@
+This directory contains SystemTap scripts for live patching of Oracle 
+
+filterSQL_opiprs.stp:  a script for live filtering Oracle SQL
+
+livepatch_basic_opiprs.stp and livepatch_opiprs.stp: live patching of Oracle hard parsing operations
+  
+Author: Luca.Canali@cern.ch
+First released: February 2016
+
