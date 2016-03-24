@@ -5,13 +5,14 @@ Author: Luca.Canali@cern.ch
 This repository contains scripts and tools for troubleshooting and performance analysis in Linux. This includes dynamic tracing scripts with SystemTap both for system calls and for userspace function tracing.
 
 DIRECTORY                     SHORT DESCRIPTION
+Ftrace                     -> I/O latency histograms at microsecond resolution 
+                              using ftrace
+Perf                       -> Linux perf and uprobes for tracing and profiling Oracle							  
 SystemTap_Linux_IO         -> SystemTap scripts for Linux I/O tracing and 
                               I/O latency measurements
 SystemTap_Userspace_Oracle -> SystemTap scripts for Oracle RDBMS troubleshooting and
                               internals investigations using userspace dynamic tracing
-Ftrace                     -> I/O latency histograms at microsecond resolution 
-                              using ftrace
-
+							  
 Acknowledgements:
 @BrendanGregg for many original ideas and tools.
 @FritsHoogland for original work on Oracle userspace tracing.
@@ -22,4 +23,5 @@ Many of the scripts provided here are experimental, may cause unwanted effect es
 
 More info:
 See the README files in each folder for additional details of what the scripts (are supposed to) do.
+
 
