@@ -1,25 +1,28 @@
 
-This directory contains a short collection of SystemTap scripts for userspace probing of Oracle database processes, originally developed for troubleshooting and investigations of Oracle internals.
+This directory contains SystemTap scripts for userspace probing of Oracle database processes, originally developed for Oracle troubleshooting and investigations of Oracle internals.
 
 Author: Luca.Canali@cern.ch
 First release: September 2014
 
-Acknowledgments: several original ideas on userspace invetigations of Oracle by @FritsHoogland
+Acknowledgments: 
+  @FritsHoogland for original work and collaboration on Oracle userspace tracing.
 
 Compatibility and notes:
-   The userspace scripts require Linux UTRACE or for more modern kernels, UPROBES. 
-   This is the case of RHEL/CentOS/Oracle Linux 6.x and 7.x 
+   The userspace-trace scripts require Linux UTRACE or UPROBES. 
+   This is the case of RHEL/CentOS/Oracle Linux 6.x (UTRACE)and 7.x (UPROBES)
    These scripts will not work with old kernels such as RHEL 5.
    SystemTap 2.5 or higher is needed.
 
- Notable exception and issue with Oracle 12.1.0.2: 
-   this script will throw "inode-offset registration error" when run against 12.1.0.2 on 
-   RHEL/OL7.1  or higher (i.e. kernel 3.10.0-229.x). The workaround is to use an older kernel
-   such as RHEL/OL7.0 (kernel 3.10.0-123.x). The issue comes from uprobes (yet to be clarified).
-   No compatibility issues with Oracle versions have been reported for Oracle 11.2
-
+Notable exception and issues with Uprobes and Oracle 12c
+   When UPROBES to trace Oracle 12c the scripts will throw "inode-offset registration error"
+   This is a problem for RHEL/OL7.1 or higher (i.e. kernel 3.10.0-229.x). The workaround is to use an older kernel
+   such as RHEL/OL7.0 (kernel 3.10.0-123.x). The issue comes from uprobes (the detailed root cause is yet to be clarified).
+   Oracle 11g is not affected by this issue
+   
 The installation of Kernel debuginfo is needed for several of the scripts that also have OS probes. See details on the scripts' headers.
 
 Additional references: 
 http://externaltable.blogspot.com/2014/11/life-of-oracle-io-tracing-logical-and.html
 http://externaltable.blogspot.com/2014/09/systemtap-into-oracle-for-fun-and-profit.html
+
+
