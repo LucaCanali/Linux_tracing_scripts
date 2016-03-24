@@ -1,0 +1,28 @@
+
+Linux perf and uprobes for tracing and profiling Oracle workloads. See details at
+Author: Luca.Canali@cern.ch
+January 2016
+
+http://externaltable.blogspot.com/2016/02/linux-perf-probes-for-oracle-tracing.html
+
+Some examples:
+-----
+Probes on the wait event interface:
+
+# export ORACLE_HOME=/u01/app/oracle/product/11.2.0.4/rdbms
+
+# perf probe -x $ORACLE_HOME/bin/oracle kskthewt timestamp=%di event=%si
+# perf probe -x $ORACLE_HOME/bin/oracle kskthbwt timestamp=%si event=%dx
+# perf probe -x $ORACLE_HOME/bin/oracle kews_update_wait_time wait_time=%si event=%r13
+
+# perf record -e probe_oracle:kews_update_wait_time -e probe_oracle:kskthbwt -e probe_oracle:kskthewt -p <pid>
+<ctrl-c> to stop gathering data
+# perf script
+
+---
+Probe on SQL hard parsing:
+
+# perf probe -x $ORACLE_HOME/bin/oracle opiprs length=%dx sql='+0(%si)':"string"
+# perf record -e probe_oracle:opiprs -p <pid> 
+# perf script
+
