@@ -7,7 +7,7 @@ This repository contains scripts and tools for troubleshooting and performance a
 DIRECTORY                     SHORT DESCRIPTION
 Ftrace                     -> I/O latency histograms at microsecond resolution 
                               using ftrace
-Perf                       -> Linux perf and uprobes for tracing and profiling Oracle							  
+Perf                       -> Linux perf and uprobes for Oracle tracing and profiling Oracle
 SystemTap_Linux_IO         -> SystemTap scripts for Linux I/O tracing and 
                               I/O latency measurements
 SystemTap_Userspace_Oracle -> SystemTap scripts for Oracle RDBMS troubleshooting and
