@@ -1,7 +1,7 @@
 #!/usr/local/bin/stap
 #
-# Measure oracle I/O hook on kcbzvb and reporting counts of distinct and repeated I/O
-# drill down by file number
+# Measure oracle I/O by hooking on kcbzvb and reporting counts of distinct and repeated I/O
+# With drill down by file number
 # The overhead of this code can be high, use rather on test systems
 #
 # Luca.Canali@cern.ch, Nov 2014
