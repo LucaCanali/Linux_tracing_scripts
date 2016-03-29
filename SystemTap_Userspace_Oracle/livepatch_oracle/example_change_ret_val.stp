@@ -1,0 +1,28 @@
+#
+# example_change_ret_val.stp
+# Change function return value by modifying the register RAX on the fly using SystemTap in guru mode
+# This is a stub, edit the process name and function name as relevant.
+#
+# Usage: run in guru mode
+#    stap -g -v example_change_ret_val.stp (optionally add -x <pid> to limit to a simple process)
+#
+# Author: Luca Canali, Feb 2016
+#
+
+# find register offset here https://github.com/jav/systemtap/blob/master/tapset/x86_64/registers.stp
+%{
+#define OFFSET_RAX 80
+%}
+
+function change_rax() %{
+    int myint;
+    myint = 1;   /* customize here with an expression for the value of the return function */
+    memcpy( ((char *)CONTEXT->uregs) + OFFSET_RAX, &myint, sizeof(myint));
+%}
+
+
+probe process("..<edit path to process here>..").function("..<edit function name here>..").return {
+    printf("pre-change: regrax=%d\n", register("rax"))
+    change_rax();
+    printf("post-change: regrax=%d\n", register("rax"))
+}

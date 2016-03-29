@@ -1,34 +1,39 @@
 #!/usr/local/bin/stap
 #
-# This is a script for live patching Oracle SQL parsing
-#    1. The Oracle probe on opiprs catches all the hard parsing of SQL
-#    2. The SQL statement matched against TARGET_SQL
+# This is a SystemTap script for modifying on the fly Oracle SQL parsing by 
+# hooking on the parsing function opiprs in guru mode.
+#    1. A SystemTap probe on the Oracle function opiprs is triggered at every hard parse operation
+#    2. The SQL statement is matched against the user-defined TARGET_SQL
 #    3. If a match is found the SQL is replaced with REPLACEMENT_SQL
-# This can be useful in the context of security band aid or performance tuning  
-# The probe only works if REPLACEMENT_SQL is not longer than TARGET_SQL
+#       This is implemented using an embedded C function: replace_SQL
+#       The probe only works if REPLACEMENT_SQL is not longer than TARGET_SQL
 #
-# This is example code, not intended to be used in production
-# Requires SystemTap guru mode as it overwrites memory
+# Note: This is example code, not intended for production use. It is unsupported and may cause instabilities.
+# Requires SystemTap in guru mode
 #
 # Use: stap -g -v livepatch_basic_opiprs.stp
 # Note: optionally add -x <pid> to limit the action to <pid> only (default is for all oracle sessions)
 #
-# Oracle binary is expected to be in the PATH: export PATH=$PATH:$ORACLE_HOME/bin
-# run as priviledge user (root)
+# The Oracle binary is expected to be in the PATH: export PATH=$PATH:$ORACLE_HOME/bin
+# Run as privileged  user (root)
 #
 # Note: this is a simplified version of livepatch_opiprs.stp
 #
-# Compatibility: tested for Oracle 11.2.0.4 on RHEL/OL 6 and 7
-#                tested for Oracle 12.1.0.2 on RHEL/OL 6 and 7 with kernel up to 3.10.0-123.x
-#                issue: uprobes for kernel higher than 3.10.0-123.x will not work on Oracle 12c
-#				 SystemTap version 2.5 or higher. Kernel debuginfo not needed for this probe.
+# Compatibility: Oracle 11.2.0.4 on RHEL/OL 6 and 7
+#                Oracle 12.1.0.2 on RHEL/OL 6 and 7 with kernel up to 3.10.0-123.x
+#                issue: will not work on 12c with Linux kernel version higher than 3.10.0-123.x 
+#                       the incompatibility comes from uprobes
+#                Use SystemTap version 2.5 or higher. 
+#                Kernel debuginfo not needed for this probe.
 #
 # Author: Luca.Canali@cern.ch
-# Created: Nov 2014, Last updated: Feb 2016
+# Created: November 2014, last updated: March 2016.
 #
 
 %{
-/* SQL that will replace TARGET_SQL */
+/* Customize here as desired: SQL that will replace TARGET_SQL */
+/* Note replacement_sql must not be longer than the target_sql */
+
 #define REPLACEMENT_SQL "select power(count(*),3) from dba_objects"
 %}
 

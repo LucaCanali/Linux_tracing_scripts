@@ -1,36 +1,41 @@
 #!/usr/local/bin/stap
 #
-# This is a script for live patching Oracle SQL parsing
-#    1. The Oracle probe on opiprs catches all the hard parsing of SQL
-#    2. The SQL statement matched against TARGET_SQL
+# This is a SystemTap script for modifying on the fly Oracle SQL parsing by 
+# hooking on the parsing function opiprs in guru mode.
+#    1. A SystemTap probe on the Oracle function opiprs is triggered at every hard parse operation
+#    2. The SQL statement is matched against the user-defined TARGET_SQL
 #    3. If a match is found the SQL is replaced with REPLACEMENT_SQL
-# This can be useful in the context of security band aid or performance tuning  
+#       This is implemented using an embedded C function: replace_SQL2
+#       This makes use of techniques for modifying userspace memory and CPU registers using SystemTap
 #
-# This is example code, not intended to be used in production
-# Requires SystemTap guru mode as it overwrites memory and CPU registers
+# Note: This is example code, not intended for production use. It is unsupported and may cause instabilities.
+# Requires SystemTap in guru mode
 #
 # Use: stap -g -v livepatch_opiprs.stp
 # Note: optionally add -x <pid> to limit the action to <pid> only (default is for all oracle sessions)
 #
-# Oracle binary is expected to be in the PATH: export PATH=$PATH:$ORACLE_HOME/bin
-# run as priviledge user (root)
+# The Oracle binary is expected to be in the PATH: export PATH=$PATH:$ORACLE_HOME/bin
+# Run as privileged  user (root)
 #
 # Compatibility: tested for Oracle 11.2.0.4 on RHEL/OL 6 and 7
 #                tested for Oracle 12.1.0.2 on RHEL/OL 6 and 7 with kernel up to 3.10.0-123.x
 #                issue: uprobes for kernel higher than 3.10.0-123.x will not work on Oracle 12c
-#				 SystemTap version 2.5 or higher. Kernel debuginfo not needed for this probe.
+#                SystemTap version 2.5 or higher. Kernel debuginfo not needed for this probe.
 #
 # Author: Luca.Canali@cern.ch
-# Created: Feb 2016 
+# Created: February 2016, last updated: March 2016.
 #
 
-# offset definition and related code are from _stp_get_register_by_offset 
+# The following offet values for CPU registers can be found at this link:
 # https://github.com/jav/systemtap/blob/master/tapset/x86_64/registers.stp
+# see definitions in function _stp_get_register_by_offset() 
+
 %{
 #define OFFSET_RDX 96
 #define OFFSET_RSI 104
+#define OFFSET_RSP 152
 
-/* SQL that will replace TARGET_SQL */
+/* Customize here as desired: REPLACEMENT_SQL will be parsed instead of TARGET_SQL */
 #define REPLACEMENT_SQL "select sysdate -1 from dual"
 %}
 
@@ -39,28 +44,34 @@ global TARGET_SQL = "select sysdate from dual"
 
 function replaceSQL2() %{
     char *sqltext;
+    char *new_sqltext;
     long new_sqllength;
-    long old_sqllength;
 
-    /* Retrieves pointer of original sql text from register rsi, or rather its copy in CONTEXT->uregs */
+    /* Retrieves the pointer to the original sql text from register rsi, 
+       or rather from its copy in CONTEXT->uregs 
+    */
     memcpy(&sqltext, ((char *)CONTEXT->uregs) + OFFSET_RSI, sizeof(sqltext));
-    old_sqllength = strlen(sqltext);
 
-    /* This changes the SQL text that will be parsed */
+    /* Retrieves the stack pointer from rsp, or rather from its copy in CONTEXT->uregs */
+    memcpy(&new_sqltext, ((char *)CONTEXT->uregs) + OFFSET_RSP, sizeof(new_sqltext));
+
+    /* This copies the new SQL into a new memory location. The chioce is %rsp - 0x2000 
+       this is a guess, hoping the memory is allocated, free and not used by branch or leaf 
+       functions of opiprs. From a few tests whis seems to work OK, although it may cause 
+       crashes, use with caution 
+    */
+    new_sqltext -= 0x2000;
+    strcpy(new_sqltext, REPLACEMENT_SQL);
+
+    /* This updates the sql string length into register rdx and the pointer to the new SQL in 
+       register rsi. 
+       The technique is to update the relevant SystemTap memory area in CONTEXT->uregs 
+       this will be copied back to register rdx when SystemTap returns to userspace  
+    */
     new_sqllength = strlen(REPLACEMENT_SQL);
-    
-    /* This copies the new SQL into the buffer for old SQL, which appears to be in the stack. */
-    /* This is proabbly not a clean solution as we don't know if the original buffer sqltext can hold a longer string */
-    /* As an alternative, find a memory location in the userspace on which to write and alter sqltext pointer accordingly */
-    strcpy(sqltext, REPLACEMENT_SQL);
-
-    /* This updates the sql string length into register rdx. */
-    /* The technique is to update the relevant SystemTap memory area in CONTEXT->uregs */
-    /* this will be copied back to register rdx when SystemTap returns to userspace */   
     memcpy( ((char *)CONTEXT->uregs) + OFFSET_RDX, &new_sqllength, sizeof(new_sqllength));
+    memcpy( ((char *)CONTEXT->uregs) + OFFSET_RSI, &new_sqltext, sizeof(new_sqltext));
 
-    /* This updates the pointer to sql text in register rsi, uncomment in case sqltext is changed */
-    /* memcpy( ((char *)CONTEXT->uregs) + OFFSET_RSI, &sqltext, sizeof(sqltext)); */
 %}
 
 probe process("oracle").function("opiprs") {
@@ -75,5 +86,4 @@ probe process("oracle").function("opiprs") {
         replaceSQL2()
     }
 }
-
 

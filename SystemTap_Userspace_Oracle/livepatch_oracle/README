@@ -1,9 +1,20 @@
-This directory contains SystemTap scripts for live patching of Oracle 
+This directory contains example SystemTap scripts that can be used to modify userspace data and CPU registers on the fly at runtime. 
+Examples are provided on how to apply these techniques to Oracle SQL parsing.
 
-filterSQL_opiprs.stp:  a script for live filtering Oracle SQL
-
-livepatch_basic_opiprs.stp and livepatch_opiprs.stp: live patching of Oracle hard parsing operations
-  
 Author: Luca.Canali@cern.ch
 First released: February 2016
+
+Additional info at the blog entry:
+http://externaltable.blogspot.com/
+
+filterSQL_opiprs.stp:       live filtering of Oracle SQL Parsing
+
+livepatch_basic_opiprs.stp: basic on the fly modification of Oracle hard parsing operations
+  
+livepatch_opiprs.stp:       on the fly modification of Oracle hard parsing operations
+
+example_change_ret_val.stp: example code to change fucntion return codes
+
+
+Disclaimer: The tools and techniques presented in this post are intended for learning/reference only and are best used on a sandbox as they are unsupported and can potentially put at risk systems stability and integrity. Administrator privileges are needed to run SystemTap probes.
 
