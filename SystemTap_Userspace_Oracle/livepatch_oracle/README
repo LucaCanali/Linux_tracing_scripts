@@ -5,7 +5,9 @@ Author: Luca.Canali@cern.ch
 First released: February 2016
 
 Additional info at the blog entry:
-http://externaltable.blogspot.com/
+http://externaltable.blogspot.com/2016/03/systemtap-guru-mode-and-oracle-sql.html
+
+Scripts:
 
 filterSQL_opiprs.stp:       live filtering of Oracle SQL Parsing
 
