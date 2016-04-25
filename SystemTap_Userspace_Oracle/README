@@ -4,6 +4,11 @@ This directory contains SystemTap scripts for userspace probing of Oracle databa
 Author: Luca.Canali@cern.ch
 First release: September 2014
 
+Relevant blog posts:
+http://externaltable.blogspot.com/2014/11/life-of-oracle-io-tracing-logical-and.html
+http://externaltable.blogspot.com/2014/09/systemtap-into-oracle-for-fun-and-profit.html
+http://externaltable.blogspot.com/2016/03/systemtap-guru-mode-and-oracle-sql.html
+
 Acknowledgments: 
   @FritsHoogland for original work and collaboration on Oracle userspace tracing.
 
@@ -20,9 +25,5 @@ Notable exception and issues with Uprobes and Oracle 12c
    Oracle 11g is not affected by this issue
    
 The installation of Kernel debuginfo is needed for several of the scripts that also have OS probes. See details on the scripts' headers.
-
-Additional references: 
-http://externaltable.blogspot.com/2014/11/life-of-oracle-io-tracing-logical-and.html
-http://externaltable.blogspot.com/2014/09/systemtap-into-oracle-for-fun-and-profit.html
 
 

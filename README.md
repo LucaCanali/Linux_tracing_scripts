@@ -14,7 +14,7 @@ Disclaimer:
 Many of the scripts provided here are experimental, may cause unwanted effect especially on busy production systems and overall may be incompatible with your current set-up and/or need some tweaking before running.
 
 Acknowledgements:
-- [Brendan Gregg](https://twitter.com/brendangregg) for many original ideas and tools.
+- [Brendan Gregg](https://twitter.com/brendangregg) for many original ideas and tools that have inspired large parts of this work.
 - [Frits Hoogland](https://twitter.com/fritshoogland) for collaboration on investigating Oracle internals and userspace tracing.
 - Dev teams for Ftrace, SystemTap, Perf
 
