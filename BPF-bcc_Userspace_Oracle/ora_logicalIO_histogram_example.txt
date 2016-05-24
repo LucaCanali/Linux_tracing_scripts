@@ -1,0 +1,29 @@
+ora_logicalIO_histogram.py measures the latency between call and return for the Oracle function kcbgtcr, 
+which is an important part of the logical IO processing for consistent reads, 
+and reports the values as a series latency histogram
+
+Example:
+
+# ./ora_logicalIO_histogram.py -p 123 3 10
+Latency histograms for kcbgtcr, Oracle logical IO for consistent read... Hit Ctrl-C to end.
+
+     kcbgtcr latency, ns : count     distribution
+         0 -> 1          : 0        |                                        |
+         2 -> 3          : 0        |                                        |
+         4 -> 7          : 0        |                                        |
+         8 -> 15         : 0        |                                        |
+        16 -> 31         : 0        |                                        |
+        32 -> 63         : 0        |                                        |
+        64 -> 127        : 0        |                                        |
+       128 -> 255        : 0        |                                        |
+       256 -> 511        : 0        |                                        |
+       512 -> 1023       : 0        |                                        |
+      1024 -> 2047       : 0        |                                        |
+      2048 -> 4095       : 0        |                                        |
+      4096 -> 8191       : 1040     |****************************************|
+      8192 -> 16383      : 143      |*****                                   |
+     16384 -> 32767      : 20       |                                        |
+     32768 -> 65535      : 12       |                                        |
+     65536 -> 131071     : 4        |                                        |
+
+

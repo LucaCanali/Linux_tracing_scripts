@@ -1,0 +1,30 @@
+The ora_wait_histogram.py attaches uprobes to some relevant fuctions in the callchain for Oracle wait events: kskthewt and kews_update_wait_time
+The script reads from the function call parameters (CPU registers) the wait event details and  reports the values as a series latency histogram
+
+Optional step:
+create eventsname.sed by running (as oracle) the supplied script eventsname.sql
+this provides translation from the wait event number to event name
+stdbuf can be used when running in "streaming mode"
+
+Example:
+
+# stdbuf -oL ./ora_wait_histogram.py 10 10|sed -e 's/event# = /event#=/g' -f eventsname.sed
+Start tracing oracle wait events... Hit Ctrl-C to end.
+
+event=db file sequential read
+     wait time, microsec : count     distribution
+         0 -> 1          : 0        |                                        |
+         2 -> 3          : 0        |                                        |
+         4 -> 7          : 0        |                                        |
+         8 -> 15         : 0        |                                        |
+        16 -> 31         : 0        |                                        |
+        32 -> 63         : 0        |                                        |
+        64 -> 127        : 25       |                                        |
+       128 -> 255        : 24521    |********************                    |
+       256 -> 511        : 46788    |****************************************|
+       512 -> 1023       : 12169    |**********                              |
+      1024 -> 2047       : 1132     |                                        |
+      2048 -> 4095       : 660      |                                        |
+      4096 -> 8191       : 248      |                                        |
+      8192 -> 16383      : 29       |                                        |
+

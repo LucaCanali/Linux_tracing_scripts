@@ -1,0 +1,17 @@
+The script ora_sqlparse_trace.py attaches uprobes to the oracle function opiprs, one of the fuctions in the callchain for Oracle hard parsing, parsing of new statements not yet in the cache.
+The script reads from the function call parameters (CPU registers) and stack the SQL text and length and prints it to stdout for tracing purposes.
+Run the script as root
+Requires the environment variable ORACLE_HOME
+
+Example:
+# export ORACLE_HOME=/u01/app/oracle/product/11.2.0.4/rdbms
+# ./ora_sqlparse_trace.py 
+
+Optionally specify -p <pid>, to limit tracing to a single Oracle process
+
+Test: run SQL on the target Oracle session. Example output:
+
+Start tracing Oracle hard parsing... Hit Ctrl-C to end.
+12:47:15  pid=123 len=25 sql=select sysdate from dual
+...
+
