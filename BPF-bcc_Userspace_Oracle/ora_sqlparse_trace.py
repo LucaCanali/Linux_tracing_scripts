@@ -2,11 +2,11 @@
 #
 # ora_sqlparse_trace.py   Basic tracing of Oracle hard parsing using BPF/bcc and uprobes
 #
-# USAGE: ora_sqlparse_trace.py [-h] [-p PID]
-#
-# This traces the sql hard parsing on Oracle binaries hooking on opiprs
-# It is a port of previous work with SystemTap and perf probes.
+# This script traces SQL hard parsing on Oracle binaries hooking on the Oracle function 
+# "opiprs" and reads from function arguments (CPU registers) and from process memory.
 # This code is experimental and a proof of concept. Use at your own risk.
+#
+# Usage: ora_sqlparse_trace.py [-h] [-p PID]
 #
 # Author: Luca.Canali@cern.ch - April 2016
 # Licensed under the Apache License, Version 2.0 (the "License")

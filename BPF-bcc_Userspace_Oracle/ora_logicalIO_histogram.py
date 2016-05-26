@@ -2,10 +2,11 @@
 #
 # ora_logicalIO_histogram.py - Oracle logical IO latency histogram using BPF/bcc and uprobes
 #
-# USAGE: ora_logicalIO_histogram.py [-h] [-p PID]
+# This script measures the latency between call and return time for the Oracle function "kcbgtcr", 
+# which is an important part of the logical IO processing for consistent reads.
+# This code is experimental and a proof of concept. Use at your own risk.
 #
-# Note: this probe measures the latency between call and return for the Oracle function kcbgtcr,
-#       which is an important part of the logical IO processing for consistent reads
+# Usage: ora_logicalIO_histogram.py [-h] [-p PID]
 #
 # Author: Luca.Canali@cern.ch - April 2016
 # Licensed under the Apache License, Version 2.0 (the "License")

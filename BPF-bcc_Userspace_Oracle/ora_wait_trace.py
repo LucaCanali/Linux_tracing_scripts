@@ -2,19 +2,19 @@
 #
 # ora_wait_trace.py - Basic oracle wait event tracing using BPF/bcc and uprobes
 #
-# USAGE: ora_wait_trace.py [-h] [-p PID]
+# This script traces Oracle sessions by hooking on the functions "kskthewt" and 
+# "kews_update_wait_time" and reads from function arguments (CPU registers).
+# This code is experimental and a proof of concept. Use at your own risk.
 #
-# use together with eventsname.sql and eventsname.sed for resolving event# into event name
+# Usage: ora_wait_trace.py [-h] [-p PID]
+#
+# Use together with eventsname.sql and eventsname.sed for resolving event# into event name
 # generate eventsname.sed from sqlplus using the scrip eventsname.sql
 # Example:
 # ./ora_waittrace.py -p 123| sed -f eventsname.sed
 #
 # Example for the streaming mode using stdbuf to avois buffering effects:
 # stdbuf -oL ./ora_wait_trace.py -p 123| sed -f ~oracle/luca/eventsname.sed
-#
-# This traces the wait events on Oracle binaries hooking on functions kskthewt and 
-# kews_update_wait_time. It is a port of previous work with SystemTap and perf probes.
-# This code is experimental and a proof of concept. Use at your own risk.
 #
 # Author: Luca.Canali@cern.ch - April 2016
 # Licensed under the Apache License, Version 2.0 (the "License")
