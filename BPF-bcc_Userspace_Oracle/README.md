@@ -3,6 +3,8 @@
 Author: Luca.Canali@cern.ch
 First release: April 2016
 
+See also: http://externaltable.blogspot.com/2016/05/linux-bpfbcc-for-oracle-tracing.html
+
 This folder contains example scripts for tracing Oracle database processes, hooking probes on at the userspace. The scripts use Linux eBPF with bcc and uprobes.
 The provided scripts are ports of previous work done with SystemTap and/or Perf and are intended as learning material not for production usage, originally developed for Oracle troubleshooting and investigations of Oracle internals.
 
