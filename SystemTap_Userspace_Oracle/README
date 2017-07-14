@@ -19,10 +19,12 @@ Compatibility and notes:
    SystemTap 2.5 or higher is needed.
 
 Notable exception and issues with Uprobes and Oracle 12c
-   When UPROBES to trace Oracle 12c the scripts will throw "inode-offset registration error"
-   This is a problem for RHEL/OL7.1 or higher (i.e. kernel 3.10.0-229.x). The workaround is to use an older kernel
-   such as RHEL/OL7.0 (kernel 3.10.0-123.x). The issue comes from uprobes (the detailed root cause is yet to be clarified).
+   When using UPROBES to trace Oracle 12c the scripts will throw "inode-offset registration error"
    Oracle 11g is not affected by this issue
+   This issue is relevant for RHEL/OL version 7.1 or higher
+   @Hatem__Mahmoud has described this issue in details and proposes a workaround at:
+   https://mahmoudhatem.wordpress.com/2017/03/27/workaround-for-systemtap-issue-oracle-tracing-registration-error-rc-0
+   Another workaround is to use an older version of Linux kernel (kernel 3.10.0-123.x or older) 
    
 The installation of Kernel debuginfo is needed for several of the scripts that also have OS probes. See details on the scripts' headers.
 
