@@ -5,8 +5,8 @@ The script is a minor modification and extension of Brendan Gregg's iolatency
 https://github.com/brendangregg/perf-tools
 
 Modifications by Luca.Canali@cern.ch, July 2015:
-    - The script now reports latency in microseconds IOPS
-	- Time waited per bucket are now reported
+    - The script now reports latency in microseconds (was milliseconds in the original script)
+    - In addition: time waited per bucket are now reported
     - The option -m <major_dev> has been added in particular to avoid double counting of IOPS when using device mapper
     - Renamed the script to iolatency_micro
 
