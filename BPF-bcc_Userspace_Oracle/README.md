@@ -17,9 +17,9 @@ The provided scripts are ports of previous work done with SystemTap and/or Perf 
 
 Compatibility and issues:
 
-- Use kernel version 4.5 or higher (tested on Fedora 24 beta)
-- Oracle version: developed and tested for Oracle 11.2.0.4
-- Oracle 12c currently not supported due to an issue that originates with uprobes (also affecting similar scripts using Perf and SystemTap)
+- Use kernel version 4.5 or higher 
+- Oracle version: these scripts have been developed and tested for Oracle 11.2.0.4
+- Oracle 12c is currently not supported due to an issue that originates with uprobes (also affecting similar scripts using Perf and SystemTap). The issue [is now understood](https://github.com/LucaCanali/Linux_tracing_scripts/tree/master/SystemTap_Userspace_Oracle). Pending/TODO: additional work to implement a fix for Oracle 12c and bcc.
 - The scripts provided here are experimental and may cause unwanted effects especially on busy systems, and overall may be incompatible with your current set-up and/or need some tweaking before running
 
 Credits and acknowledgements:
@@ -27,5 +27,5 @@ Credits and acknowledgements:
 - [Brendan Gregg](https://twitter.com/brendangregg) for writing many of the example tools/scripts for bcc which have been used as guide for writing the scripts in this folder
 - BPF and [bcc](https://github.com/iovisor/bcc) development teams
 - [Frits Hoogland](https://twitter.com/fritshoogland) for collaboration on investigating Oracle internals and userspace tracing.
-
+- [Sasha Goldshtein](https://twitter.com/goldshtn) has developed scripts for bcc tracing of MySQL and PostgreSQL, see for example [dbstat.py](https://github.com/iovisor/bcc/blob/master/tools/dbstat.py)
 
