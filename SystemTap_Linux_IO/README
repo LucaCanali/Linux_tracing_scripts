@@ -24,6 +24,8 @@ blockio_rq_all_TRACE_EXPERIMENTAL.stp            -> trace block I/O calls, use f
 blockio_rq_filter_TRACE_EXPERIMENTAL.stp         -> tracing of block I/O with filters on device and 
                                                     operation, use for troubleshooting, 
                                                     beware of the overhead
+pread_latencyhistogram.stp                       -> histograms of the "pread" system call latency
+read_latencyhistogram.stp                        -> histograms and total latency of "read" call
 
 The scripts here below produce block I/O histograms using ioblock and ioscheduler providers. 
 They are similar to the scripts above but in this case kernel debuginfo are needed

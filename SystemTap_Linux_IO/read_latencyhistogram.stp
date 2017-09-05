@@ -1,0 +1,47 @@
+#!/usr/bin/stap
+#
+# read_latencyhistogram.stp
+#
+# This is a SystemTap script to gather I/O latency from the Linux kernel syscall read
+# and print I/O latency histograms
+#
+# By Luca.Canali@cern.ch, September 2017
+# Based, with minor modifications, on pread_latencyhistogram.stp (March 2015)
+#
+# This script is based on original ideas of biolatency-nd.stp of systemtap-lwtools
+# by Brendan Gregg
+#
+# Note: this probe does not need to have kernel debuginfo installed
+#
+# Usage: stap -v read_latencyhistogram.stp <interval>
+#
+# Example: stap -v read_latencyhistogram.stp 3
+#
+
+global LatencyTimes, RequestTime, TotalLatency
+
+probe nd_syscall.read {
+   RequestTime[tid()] = gettimeofday_us()
+}
+
+probe nd_syscall.read.return {
+   t = gettimeofday_us()
+   s = RequestTime[tid()]
+   if (s > 0) {
+       deltaT = t-s
+       TotalLatency += deltaT
+       LatencyTimes <<< deltaT
+       delete RequestTime[tid()]
+   }
+}
+
+probe timer.sec($1) {
+   if (@count(LatencyTimes) > 0)
+       println("Latency histogram of read calls in the interval")
+       println(@hist_log(LatencyTimes))
+       print("Summed latency in the interval (microseconds): ")
+       println(TotalLatency)
+   delete(LatencyTimes)
+   TotalLatency = 0
+}
+
