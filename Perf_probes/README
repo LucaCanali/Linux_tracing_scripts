@@ -28,4 +28,4 @@ Probe on SQL hard parsing:
 # perf script
 
 ----
-Note a workaround is needed for Oracle 12c when using Perf on recent kernels, see [Oracle12_and_Perf](https://mahmoudhatem.wordpress.com/2017/03/22/workaround-for-linux-perf-probes-issue-for-oracle-tracing/)
+Note a workaround is needed for Oracle 12c when using Perf on recent kernels, the workaround is simple and consists in (tracing the next instruction, for example kskthewt+2 instead of kskthewt), see [Oracle12_and_Perf](https://mahmoudhatem.wordpress.com/2017/03/22/workaround-for-linux-perf-probes-issue-for-oracle-tracing/)

@@ -6,7 +6,7 @@ This repository contains example scripts and tools for troubleshooting and perfo
 | Directory                  | Short description
 | -------------------------- | -------------------------------------------------------------------------------------
 | [Ftrace](Ftrace)           | I/O latency histograms at microsecond resolution using ftrace
-| [Perf](Perf)               | Linux Perf and uprobes for Oracle tracing and profiling
+| [Perf](Perf_probes)               | Linux Perf and uprobes for Oracle tracing and profiling
 | [SystemTap_Linux_IO](SystemTap_Linux_IO) | SystemTap scripts for Linux I/O tracing and I/O latency measurements
 | [SystemTap_Userspace_Oracle](SystemTap_Userspace_Oracle) | SystemTap scripts for Oracle RDBMS troubleshooting and internals investigations using userspace dynamic tracing
 | [BPF-bcc_Userspace_Oracle](BPF-bcc_Userspace_Oracle) | BPF/bcc scripts for Oracle userspace tracing, mostly ports from previous SystemTap and Perf work 
