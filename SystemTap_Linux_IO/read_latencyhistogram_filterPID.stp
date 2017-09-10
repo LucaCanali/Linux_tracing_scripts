@@ -1,9 +1,10 @@
 #!/usr/bin/stap
 #
-# read_latencyhistogram.stp
+# read_latencyhistogram_filterPID.stp
 #
 # This is a SystemTap script to gather I/O latency from the Linux kernel syscall read
 # and print I/O latency histograms
+# Add a filter on the traced process with the -x <PID> option
 #
 # By Luca.Canali@cern.ch, September 2017
 # Based, with minor modifications, on pread_latencyhistogram.stp (March 2015)
@@ -13,25 +14,29 @@
 #
 # Note: this probe does not need to have kernel debuginfo installed
 #
-# Usage: stap -v read_latencyhistogram.stp <interval>
+# Usage: stap -v read_latencyhistogram_filterPID.stp -x <PID> <interval>
 #
-# Example: stap -v read_latencyhistogram.stp 3
+# Example: stap -v read_latencyhistogram_filterPID.stp -x 1234 3
 #
 
 global LatencyTimes, RequestTime, TotalLatency
 
 probe nd_syscall.read {
-   RequestTime[tid()] = gettimeofday_us()
+   if (pid() == target()) {
+       RequestTime[tid()] = gettimeofday_us()
+   }
 }
 
 probe nd_syscall.read.return {
-   t = gettimeofday_us()
-   s = RequestTime[tid()]
-   if (s > 0) {
-       deltaT = t-s
-       TotalLatency += deltaT
-       LatencyTimes <<< deltaT
-       delete RequestTime[tid()]
+   if (pid() == target()) {
+       t = gettimeofday_us()
+       s = RequestTime[tid()]
+       if (s > 0) {
+           deltaT = t-s
+           TotalLatency += deltaT
+           LatencyTimes <<< deltaT
+           delete RequestTime[tid()]
+      }
    }
 }
 
