@@ -26,7 +26,7 @@ The scripts are ports of previous work done with SystemTap and/or Perf and are i
 
 Compatibility and issues:
 
-- Must have a kernel with BPF enabled. You can use Red Hat/ Oracle Linux 7.6 or higher (released in Q4 2018) 
+- Must have a kernel with BPF enabled. You can use Red Hat/ Oracle Linux 7.6 or higher (`yum install bcc*`)
   or use a system with Linux kernel version 4.5 or higher. 
 - Oracle version: these scripts have been developed and tested for Oracle 11.2.0.4
 - New in February 2019, a version for 12c and higher of 3 scripts implement a workaround for the issues with Oracle
